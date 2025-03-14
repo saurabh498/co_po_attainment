@@ -3,14 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>CO-PO Attainment Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card-custom {
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: white;
+            padding: 25px;
+        }
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5 text-center">
-        <h1>Welcome to CO-PO Attainment Dashboard</h1>
-        <p>You have successfully logged in.</p>
-        <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+    <div class="container mt-5 position-relative">
+        <a href="{{ url_for('logout') }}" class="btn btn-danger logout-btn">Logout</a>
+
+        <h1 class="text-center mb-4">CO-PO Attainment Dashboard</h1>
+        <p class="text-center text-muted">You have successfully logged in.</p>
+
+        <div id="alert-container"></div> <!-- Alert Message Container -->
+
+        <div class="card card-custom">
+            <h4 class="text-center mb-3">Enter Academic Information</h4>
+            <form id="academic-form" method="POST">
+                <div class="mb-3">
+                    <label for="department" class="form-label">Department</label>
+                    <input type="text" class="form-control" id="department" name="department" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="academic_year" class="form-label">Academic Year</label>
+                    <input type="text" class="form-control" id="academic_year" name="academic_year" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="semester" class="form-label">Semester</label>
+                    <input type="text" class="form-control" id="semester" name="semester" required>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary w-25">Save</button>
+                    <button type="button" class="btn btn-info w-25" onclick="viewData()">View</button>
+                    <button type="button" class="btn btn-danger w-25" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="view-results" class="mt-4"></div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-success btn-lg" onclick="nextPage()">Next</button>
+        </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Academic Info</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="delete-department" class="form-control mb-2" placeholder="Department">
+                    <input type="text" id="delete-academic-year" class="form-control mb-2" placeholder="Academic Year">
+                    <input type="text" id="delete-semester" class="form-control mb-2" placeholder="Semester">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteData()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function showAlert(message, type = "success") {
+            const alertContainer = document.getElementById("alert-container");
+            alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        document.getElementById("academic-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+
+            fetch("/save_academic_info", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert(data.message);
+                this.reset();
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                showAlert("An error occurred. Please try again.", "danger");
+            });
+        });
+
+        function viewData() {
+            document.getElementById("view-results").innerHTML = "<p class='text-center'>Loading...</p>"; // Show loading text
+
+            fetch("/view_academic_info")
+            .then(response => response.json())
+            .then(data => {
+                let output = "<h3>Saved Data</h3>";
+                if (data.length === 0) {
+                    output += "<p class='text-danger'>No records found.</p>";
+                } else {
+                    output += "<ul class='list-group'>";
+                    data.forEach(item => {
+                        output += `<li class="list-group-item">
+                            <strong>Department:</strong> ${item.department} |
+                            <strong>Year:</strong> ${item.academic_year} |
+                            <strong>Semester:</strong> ${item.semester}
+                        </li>`;
+                    });
+                    output += "</ul>";
+                }
+                document.getElementById("view-results").innerHTML = output;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                showAlert("Error fetching data. Please try again.", "danger");
+            });
+        }
+
+        function deleteData() {
+            const department = document.getElementById("delete-department").value.trim();
+            const academic_year = document.getElementById("delete-academic-year").value.trim();
+            const semester = document.getElementById("delete-semester").value.trim();
+
+            if (!department || !academic_year || !semester) {
+                showAlert("Please fill all fields before deleting.", "warning");
+                return;
+            }
+
+            fetch("/delete_academic_info", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ department, academic_year, semester })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert(data.message, "danger");
+                viewData(); // Refresh the data list
+                document.querySelector("#deleteModal .btn-close").click(); // Close the modal
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                showAlert("Error deleting record. Please try again.", "danger");
+            });
+        }
+
+        function nextPage() {
+            window.location.href = "/sub_co_po";
+        }
+    </script>
 </body>
 </html>
