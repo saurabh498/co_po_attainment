@@ -1,12 +1,16 @@
 import datetime
 from sqlite3 import Cursor
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CursorResult
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import pymysql
 from datetime import datetime
+from flask_sqlalchemy import session
+from flask import session, redirect, url_for
+from sqlalchemy.sql import func
+
 
 pymysql.install_as_MySQLdb()
 
@@ -42,6 +46,8 @@ class AcademicInfo(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class SubjectCOPO(db.Model):
+    __tablename__ = "subject_copo"
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Tracks who added it
     subject_name = db.Column(db.String(200), nullable=False)
@@ -53,12 +59,38 @@ class SubjectCOPO(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", backref="co_po_entries")
+    
+    # Relationship with Mapping table
+    mappings = db.relationship("Mapping", backref="subject_copo", cascade="all, delete-orphan", lazy=True)
+
+class Mapping(db.Model):
+    __tablename__ = "mapping"
+
+    id = db.Column(db.Integer, primary_key=True)
+    subject_copo_id = db.Column(db.Integer, db.ForeignKey('subject_copo.id'), nullable=False)  # Link to SubjectCOPO
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Tracks who added it
+    co_code = db.Column(db.String(20), nullable=False)  # CO1, CO2, etc.
+    po_code = db.Column(db.String(20), nullable=False)  # PO1, PO2, etc.
+    mapping_value = db.Column(db.Float, nullable=False)
+    total_hours = db.Column(db.Float, nullable=False, default=0)
+    avg_value = db.Column(db.Float, nullable=False, default=0)
+    
+    user = db.relationship("User", backref="mappings")
+    
+  
    
 # Define Student Model
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    roll_no = db.Column(db.String(20), nullable=False,unique = True)
+    roll_no = db.Column(db.String(20), nullable=False, unique=True)
     full_name = db.Column(db.String(255), nullable=False)
+
+    def to_dict(self):
+        return {
+            'roll_no': self.roll_no,
+            'full_name': self.full_name
+        }
+
 
 class ExamResult(db.Model):  
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  
@@ -71,11 +103,26 @@ class ExamResult(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))  # ✅ FIXED
+    return db.session.get(User, user_id)  # ✅ FIXED
+
+
+@app.route("/delete_test_student", methods=["POST"])
+def delete_test_student():
+    roll_no = "17"  # Roll number of the test student
+    student = Student.query.filter_by(roll_no=roll_no).first()
+    
+    if not student:
+        return jsonify({'error': 'Student not found'}), 404
+
+    db.session.delete(student)
+    db.session.commit()
+    return jsonify({'message': 'Test student deleted successfully'})
+
 
 # Ensure tables exist
 with app.app_context():
     db.create_all()
+
 
 # ------------------ ROUTES ------------------ #
 
@@ -187,27 +234,29 @@ def delete_academic_info():
 @app.route("/sub_co_po")
 @login_required
 def sub_co_po():
-    return render_template("sub_co_po.html")  # Create this template
+    return render_template("sub_co_po.html")
 
-    
 @app.route("/save_sub_co_po", methods=["POST"])
 @login_required
 def save_sub_co_po():
     data = request.json
-    print("✅ Received Data:", data)  # Debugging line
+    print("✅ Received Data:", data)  # Debugging
     
     subject = data.get("subject")
     co_data = data.get("co_data", [])
     po_data = data.get("po_data", [])
+    mapping_data = data.get("mapping_data", [])  # ✅ Extract CO-PO Mapping Values
 
     if not subject or not co_data or not po_data:
         return jsonify({"message": "Subject, COs, and POs are required!"}), 400
 
     try:
-        # Delete existing records for this subject
+        # Delete existing CO-PO records for this subject
         SubjectCOPO.query.filter_by(user_id=current_user.id, subject_name=subject).delete()
-        
-        # Save new CO-PO mappings
+        db.session.commit()  # ✅ Ensure old records are removed before inserting new ones
+
+        # Save CO-PO relationships
+        new_entries = []
         for co in co_data:
             for po in po_data:
                 new_entry = SubjectCOPO(
@@ -220,14 +269,40 @@ def save_sub_co_po():
                     po_text=po["po_text"]
                 )
                 db.session.add(new_entry)
-        
+                new_entries.append(new_entry)
+
+        db.session.flush()  # ✅ Get IDs of newly inserted SubjectCOPO entries
+
+        # ✅ Debugging: Check if CO-PO records are saved
+        print(f"✅ New CO-PO Entries: {[{'id': entry.id, 'co_code': entry.co_code, 'po_code': entry.po_code} for entry in new_entries]}")
+
+        # ✅ Save CO-PO Mapping Table values
+        for mapping in mapping_data:
+            related_entry = next(
+                (entry for entry in new_entries if entry.co_code == mapping["co_code"] and entry.po_code == mapping["po_code"]), 
+                None
+            )
+            if related_entry:
+                new_mapping = Mapping(
+                    user_id=current_user.id,
+                    subject_copo_id=related_entry.id,  # ✅ Corrected to use `subject_copo_id`
+                    co_code=mapping["co_code"],
+                    po_code=mapping["po_code"],
+                    mapping_value=mapping["mapping_value"],
+                    total_hours=mapping["mapping_value"],  
+                    avg_value=mapping["mapping_value"]
+                )
+                db.session.add(new_mapping)
+            else:
+                print(f"⚠️ No matching SubjectCOPO entry found for CO: {mapping['co_code']} and PO: {mapping['po_code']}")
+
         db.session.commit()
         return jsonify({"message": "CO-PO Mapping saved successfully!"})
+
     except Exception as e:
         db.session.rollback()
         print(f"❌ Error: {e}")  # Debugging
         return jsonify({"message": f"Error: {str(e)}"}), 500
-
 
 @app.route('/view_sub_co_po', methods=['GET'])
 @login_required
@@ -238,29 +313,45 @@ def view_sub_co_po():
         return jsonify({"message": "Subject is required!"}), 400
 
     try:
-        records = SubjectCOPO.query.filter_by(user_id=current_user.id, subject_name=subject).all()
-        
-        if not records:
+        # Fetch data with NULL handling
+        results = db.session.query(
+            SubjectCOPO.co_code,
+            SubjectCOPO.co_text,
+            SubjectCOPO.cognition,
+            SubjectCOPO.po_code,
+            SubjectCOPO.po_text,
+            Mapping.mapping_value,
+            func.coalesce(Mapping.total_hours, 0.0).label("total_hours"),  # ✅ Handle NULL values
+            func.coalesce(Mapping.avg_value, 0.0).label("avg_value")  # ✅ Handle NULL values
+        ).join(
+            Mapping, SubjectCOPO.id == Mapping.subject_copo_id
+        ).filter(
+            SubjectCOPO.user_id == current_user.id,
+            SubjectCOPO.subject_name == subject
+        ).all()
+
+        if not results:
             return jsonify([])
 
-        unique_pos = {}
-        response = []
+        # Debugging - Print the results
+        print("✅ DEBUGGING RESULTS:")
+        for rec in results:
+            print(rec)
 
-        for rec in records:
-            # Avoid duplicate POs
-            if rec.po_code not in unique_pos:
-                unique_pos[rec.po_code] = {
-                    "po_code": rec.po_code,
-                    "po_text": rec.po_text
-                }
-
-            response.append({
-                "co_code": rec.co_code,
-                "co_text": rec.co_text,
-                "cognition": rec.cognition,
-                "po_code": rec.po_code,
-                "po_text": rec.po_text
-            })
+        # Convert results to a list
+        response = [
+            {
+                "co_code": rec.co_code or "N/A",
+                "co_text": rec.co_text or "N/A",
+                "cognition": rec.cognition or "N/A",
+                "po_code": rec.po_code or "N/A",
+                "po_text": rec.po_text or "N/A",
+                "mapping_value": rec.mapping_value or 0.0,
+                "total_hours": rec.total_hours or 0.0,
+                "avg_value": rec.avg_value or 0.0
+            }
+            for rec in results
+        ]
 
         return jsonify(response)
 
@@ -268,45 +359,41 @@ def view_sub_co_po():
         print(f"❌ ERROR in /view_sub_co_po: {e}")  # Debugging
         return jsonify({"error": str(e)}), 500
 
+
+ 
+
 @app.route("/delete_subject", methods=["DELETE"])
 @login_required
 def delete_subject():
-    data = request.json
-    subject = data.get("subject")
+    data = request.get_json()
+    subject_name = data.get("subject")
 
-    if not subject:
-        return jsonify({"error": "Subject is required!"}), 400
+    if not subject_name:
+        return jsonify({"error": "Subject name is required"}), 400
 
-    SubjectCOPO.query.filter_by(user_id=current_user.id, subject_name=subject).delete()
-    db.session.commit()
-
-    return jsonify({"message": "Subject deleted successfully!"})
+    subject = SubjectCOPO.query.filter_by(subject_name=subject_name, user_id=current_user.id).first()
     
-
-@app.route("/delete_sub_co_po", methods=["DELETE"])
-@login_required
-def delete_sub_co_po():
-    data = request.json
-    subject = data.get("subject")
-
     if not subject:
-        return jsonify({"message": "Subject is required!"}), 400
+        return jsonify({"error": "Subject not found"}), 404
 
-    SubjectCOPO.query.filter_by(user_id=current_user.id, subject_name=subject).delete()
+    db.session.delete(subject)
     db.session.commit()
-    return jsonify({"message": "CO-PO Mapping deleted successfully!"})
+
+    return jsonify({"message": f"Subject '{subject_name}' deleted successfully"}), 200
+
+    
 
 
 @app.route("/logout")
-@login_required
 def logout():
-    logout_user()
-    return redirect(url_for("home"))  # 🔥 Redirect to home page
+    session.clear()  # Clears all session data
+    return redirect(url_for("home"))  # Redirect to home after logout
 
 
-@app.route("/next_page")
+@app.route('/next_page')
 def next_page():
-    return render_template("next_page.html")
+    return render_template('next_page.html')
+
 
 @app.route("/save_students", methods=["POST"])
 def save_students():
@@ -328,10 +415,25 @@ def save_students():
         db.session.rollback()
         return jsonify({"message": "Error saving students!", "error": str(e)}), 500
 
-@app.route('/get_students', methods=['GET'])
+@app.route("/get_user/<int:user_id>")
+def get_user(user_id):
+    with session(db) as session:
+        user = session.get(User, user_id)
+    return jsonify(user.to_dict() if user else {"error": "User not found"})
+
+@app.route("/get_students", methods=["GET"])
 def get_students():
-    students = Student.query.all()
-    return jsonify({"students": [{"roll_no": s.roll_no, "full_name": s.full_name} for s in students]})
+    try:
+        students = Student.query.all()
+
+        if not students:  # Check if students list is empty
+            return jsonify({"students": [], "message": "No students found"}), 200
+
+        return jsonify({"students": [student.to_dict() for student in students]})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/update_student', methods=['POST'])
 def update_student():
@@ -350,29 +452,22 @@ def update_student():
 
 @app.route('/delete_student', methods=['POST'])
 def delete_student():
-    data = request.json
-    roll_no = data.get("roll_no")
+    data = request.get_json()
+    roll_no = data.get('roll_no')  # Correct JSON parsing
 
     if not roll_no:
-        return jsonify({"message": "Roll number missing!"}), 400
+        return jsonify({'error': 'Roll No not provided'}), 400
 
-    print(f"Attempting to delete student with Roll No: {roll_no}")  # Debugging
+    student = Student.query.filter_by(roll_no=roll_no).first()
+    if not student:
+        return jsonify({'error': 'Student not found'}), 404
 
-    student = Student.query.get(roll_no)
+    db.session.delete(student)
+    db.session.commit()
+    return jsonify({'message': 'Student deleted successfully'})
 
-    if student:
-        db.session.delete(student)
-        db.session.commit()
-        return jsonify({"message": "Student deleted successfully!"})
-    
-    print("Student not found!")  # Debugging
-    return jsonify({"message": "Student not found!"}), 404
 
-@app.route('/get_student')
-def get_student():
-    roll_no = request.args.get("roll_no")
-    student = next((s for s in student if s["roll_no"] == roll_no), None)
-    return jsonify(student) if student else ("Student not found", 404)
+
 
 @app.route('/cgpa_calculation')
 def cgpa_calculation():
@@ -380,28 +475,44 @@ def cgpa_calculation():
 
 @app.route('/store_exam', methods=['POST'])
 def store_exam():
-    data = request.get_json()
-    roll_no = data.get('roll_no')
-    exam_type = data.get('exam_type')
-    subject_code = data.get('subject_code')
-    marks_obtained = data.get('marks_obtained')
-    total_marks = data.get('total_marks')
+    data = request.get_json()  # Get JSON data from request
     
-    student = Student.query.filter_by(roll_no=roll_no).first()
-    if not student:
-        return jsonify({'error': 'Student not found'}), 404
+    if not isinstance(data, list):
+        return jsonify({"error": "Invalid data format. Expected a list."}), 400
+
+    results = []  # Placeholder to store received data
+
+    for entry in data:
+        roll_no = entry.get('roll_no')
+        exam_name = entry.get('exam_name')
+        subject_code = entry.get('subject_code')
+        marks = entry.get('marks')
+
+        if not roll_no or not exam_name or not subject_code or marks is None:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        results.append(entry)  # Store data in a list (temporary storage)
+    data = request.get_json()  # Get JSON data from request
     
-    new_exam_result = ExamResult(
-        roll_no=roll_no,
-        exam_type=exam_type,
-        subject_code=subject_code,
-        marks_obtained=marks_obtained,
-        total_marks=total_marks
-    )
-    db.session.add(new_exam_result)
-    db.session.commit()
+    if not isinstance(data, list):
+        return jsonify({"error": "Invalid data format. Expected a list."}), 400
+
+    results = []  # Placeholder to store received data
+
+    for entry in data:
+        roll_no = entry.get('roll_no')
+        exam_name = entry.get('exam_name')
+        subject_code = entry.get('subject_code')
+        marks = entry.get('marks')
+
+        if not roll_no or not exam_name or not subject_code or marks is None:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        results.append(entry)  # Store data in a list (temporary storage)
     
-    return jsonify({'message': 'Exam result stored successfully'})
+    print("Received Exam Data:", results)  # Debugging: Print received data
+    return jsonify({"message": "Exam results stored successfully", "data": results}), 200
+
 
     
 @app.route('/get_exams/<roll_no>', methods=['GET'])

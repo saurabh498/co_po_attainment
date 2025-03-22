@@ -5,105 +5,156 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - CO-PO Attainment</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <style>
+        /* Global Styles */
         body {
-            background-color: #f8f9fa;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1E2A78, #8E44AD);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
         }
+
+        /* Register Container */
         .register-container {
-            max-width: 500px;
-            margin: 100px auto;
+            width: 100%;
+            max-width: 400px;
             padding: 30px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: fadeIn 0.8s ease-in-out;
         }
         .register-container h2 {
-            text-align: center;
+            font-weight: bold;
+            font-size: 2rem;
             margin-bottom: 20px;
-            color: #333;
         }
+
+        /* Form Fields */
         .form-label {
             font-weight: 500;
-            color: #555;
+            color: white;
+            text-align: left;
+            display: block;
         }
         .form-control {
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: 0.3s;
         }
         .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            border: none;
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
+
+        /* Buttons */
         .btn-primary {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             font-size: 1.1rem;
-            border-radius: 5px;
-            background-color: #007bff;
+            font-weight: bold;
+            border-radius: 8px;
             border: none;
+            background-color: #ffcc00;
+            color: #222;
+            transition: 0.3s;
         }
         .btn-primary:hover {
-            background-color: #0056b3;
+            background-color: #e6b800;
+            transform: scale(1.05);
         }
+
+        /* Login Link */
         .login-link {
-            text-align: center;
             margin-top: 15px;
+            font-size: 0.9rem;
         }
         .login-link a {
-            color: #007bff;
+            color: #ffcc00;
             text-decoration: none;
         }
         .login-link a:hover {
             text-decoration: underline;
         }
+
+        /* Error Messages */
         .error-message {
-            color: red;
+            color: #ff4d4d;
             font-size: 0.9rem;
-            margin-bottom: 10px;
+            margin-top: 5px;
+            display: none;
         }
-        .form-control.error {
-            border-color: red;
+
+        /* Password Strength Indicator */
+        .password-strength {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            color: #ddd;
+            text-align: left;
+        }
+
+        /* Fade-in Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">CO-PO Attainment</a>
-        </div>
-    </nav>
 
     <div class="register-container">
         <h2>Register</h2>
+        
         {% if error %}
             <p class="error-message">{{ error }}</p>
         {% endif %}
+
         <form id="register-form" action="{{ url_for('register') }}" method="POST">
             <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
                 <input type="text" class="form-control" id="username" name="username" required>
-                <p class="error-message" id="username-error" style="display: none;">Username cannot be empty or spaces!</p>
+                <p class="error-message" id="username-error">Username cannot be empty or have spaces!</p>
             </div>
+
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
                 <input type="password" class="form-control" id="password" name="password" required>
+                <p class="password-strength" id="password-strength">Password Strength: <span id="strength-text">Weak</span></p>
             </div>
+
             <div class="mb-3">
                 <label for="confirm_password" class="form-label">Confirm Password</label>
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                <p class="error-message" id="password-error" style="display: none;">Passwords do not match!</p>
+                <p class="error-message" id="password-error">Passwords do not match!</p>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Register</button>
+
+            <button type="submit" class="btn btn-primary">Register</button>
         </form>
+
         <div class="login-link">
             Already have an account? <a href="/login">Login here</a>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         document.getElementById("register-form").addEventListener("submit", function (event) {
@@ -114,32 +165,45 @@
             let usernameError = document.getElementById("username-error");
             let passwordError = document.getElementById("password-error");
 
-            // Reset previous errors
             usernameError.style.display = "none";
             passwordError.style.display = "none";
-            document.getElementById("username").classList.remove("error");
-            document.getElementById("confirm_password").classList.remove("error");
 
             let isValid = true;
 
-            // Validate username (prevent spaces)
-            if (username === "") {
+            // Validate username (no spaces allowed)
+            if (username === "" || username.includes(" ")) {
                 usernameError.style.display = "block";
-                document.getElementById("username").classList.add("error");
                 isValid = false;
             }
 
             // Validate password match
             if (password !== confirmPassword) {
                 passwordError.style.display = "block";
-                document.getElementById("confirm_password").classList.add("error");
                 isValid = false;
             }
 
             if (!isValid) {
-                event.preventDefault(); // Prevent form submission
+                event.preventDefault();
+            }
+        });
+
+        // Live password strength indicator
+        document.getElementById("password").addEventListener("input", function () {
+            let password = this.value;
+            let strengthText = document.getElementById("strength-text");
+
+            if (password.length < 6) {
+                strengthText.textContent = "Weak";
+                strengthText.style.color = "red";
+            } else if (password.length < 10) {
+                strengthText.textContent = "Medium";
+                strengthText.style.color = "orange";
+            } else {
+                strengthText.textContent = "Strong";
+                strengthText.style.color = "limegreen";
             }
         });
     </script>
+
 </body>
 </html>

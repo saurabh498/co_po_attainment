@@ -7,13 +7,30 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8f9fa;
+            background: linear-gradient(135deg, #74ebd5, #acb6e5);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        .card-custom {
+        .container {
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            background: white;
-            padding: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+        .form-control, .btn {
+            border-radius: 8px;
+        }
+        .btn-custom {
+            transition: 0.3s;
+        }
+        .btn-custom:hover {
+            transform: scale(1.05);
         }
         .logout-btn {
             position: absolute;
@@ -23,48 +40,35 @@
     </style>
 </head>
 <body>
-    <div class="container mt-5 position-relative">
+    <div class="container text-center position-relative">
         <a href="{{ url_for('logout') }}" class="btn btn-danger logout-btn">Logout</a>
+        <h1 class="mb-3">CO-PO Attainment Dashboard</h1>
+        <p class="text-light">You have successfully logged in.</p>
 
-        <h1 class="text-center mb-4">CO-PO Attainment Dashboard</h1>
-        <p class="text-center text-muted">You have successfully logged in.</p>
+        <div id="alert-container"></div>
 
-        <div id="alert-container"></div> <!-- Alert Message Container -->
+        <form id="academic-form" class="text-start mt-3" method="POST">
+            <label class="form-label">Department</label>
+            <input type="text" class="form-control mb-3" id="department" name="department" required>
+            
+            <label class="form-label">Academic Year</label>
+            <input type="text" class="form-control mb-3" id="academic_year" name="academic_year" required>
+            
+            <label class="form-label">Semester</label>
+            <input type="text" class="form-control mb-3" id="semester" name="semester" required>
+            
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary btn-custom w-30">Save</button>
+                <button type="button" class="btn btn-info btn-custom w-30" onclick="viewData()">View</button>
+                <button type="button" class="btn btn-danger btn-custom w-30" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
+            </div>
+        </form>
 
-        <div class="card card-custom">
-            <h4 class="text-center mb-3">Enter Academic Information</h4>
-            <form id="academic-form" method="POST">
-                <div class="mb-3">
-                    <label for="department" class="form-label">Department</label>
-                    <input type="text" class="form-control" id="department" name="department" required>
-                </div>
+        <div id="view-results" class="mt-4 text-light"></div>
 
-                <div class="mb-3">
-                    <label for="academic_year" class="form-label">Academic Year</label>
-                    <input type="text" class="form-control" id="academic_year" name="academic_year" required>
-                </div>
-
-                <div class="mb-3">
-                    <label for="semester" class="form-label">Semester</label>
-                    <input type="text" class="form-control" id="semester" name="semester" required>
-                </div>
-
-                <div class="d-flex justify-content-between">
-                    <button type="submit" class="btn btn-primary w-25">Save</button>
-                    <button type="button" class="btn btn-info w-25" onclick="viewData()">View</button>
-                    <button type="button" class="btn btn-danger w-25" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
-                </div>
-            </form>
-        </div>
-
-        <div id="view-results" class="mt-4"></div>
-
-        <div class="text-center mt-4">
-            <button class="btn btn-success btn-lg" onclick="nextPage()">Next</button>
-        </div>
+        <button class="btn btn-success btn-lg mt-4 btn-custom" onclick="nextPage()">Next</button>
     </div>
 
-    <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -85,9 +89,7 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         function showAlert(message, type = "success") {
             const alertContainer = document.getElementById("alert-container");
@@ -117,12 +119,12 @@
         });
 
         function viewData() {
-            document.getElementById("view-results").innerHTML = "<p class='text-center'>Loading...</p>"; // Show loading text
+            document.getElementById("view-results").innerHTML = "<p class='text-center'>Loading...</p>";
 
             fetch("/view_academic_info")
             .then(response => response.json())
             .then(data => {
-                let output = "<h3>Saved Data</h3>";
+                let output = "<h3 class='text-light'>Saved Data</h3>";
                 if (data.length === 0) {
                     output += "<p class='text-danger'>No records found.</p>";
                 } else {
@@ -162,8 +164,7 @@
             .then(response => response.json())
             .then(data => {
                 showAlert(data.message, "danger");
-                viewData(); // Refresh the data list
-                document.querySelector("#deleteModal .btn-close").click(); // Close the modal
+                viewData();
             })
             .catch(error => {
                 console.error("Error:", error);
