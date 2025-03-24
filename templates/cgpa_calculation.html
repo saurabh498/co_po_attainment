@@ -8,70 +8,88 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
-      height: 3000px;
+      background-color: #f8f9fa;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
     table {
-      width: auto;
-      /* Prevents excessive stretching */
+      width: 100%;
       border-collapse: collapse;
-      margin: 10px;
-      font-size: 12px;
-      text-align: center;
-      display: inline-block;
-      vertical-align: top;
+      margin-top: 20px;
     }
 
     th,
     td {
-      border: 1px solid black;
-      padding: 5px;
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
     }
 
     th {
-      background-color: #f2f2f2;
+      background-color: #007bff;
+      color: white;
     }
 
     input {
-      width: 30px;
+      width: 50px;
       text-align: center;
-      font-size: 10px;
-      padding: 2px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
 
-    /* Fix alignment for button & table */
-    .button-table-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    button {
-      background-color: gold;
-      padding: 8px 12px;
+    .btn-custom {
+      background-color: #28a745;
+      color: white;
+      padding: 10px 15px;
       border: none;
+      border-radius: 5px;
       cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-custom:hover {
+      background-color: #218838;
+    }
+
+    .card {
+      padding: 15px;
+      border-radius: 8px;
+      background: #e9ecef;
+    }
+
+    #cgpa-box {
+      font-size: 22px;
       font-weight: bold;
+      color: #dc3545;
     }
   </style>
-
 
 </head>
 
 <body>
   <div class="container mt-4">
     <h1 class="text-center">CGPA Calculation</h1>
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-between">
       <button class="btn btn-danger" onclick="logout()">Logout</button>
     </div>
 
     <div class="card p-3 shadow mt-3">
-      <h4 class="text-center mb-2">Selected Student</h4>
+      <h4 class="text-center">Selected Student</h4>
       <p><strong>Roll No:</strong> <span id="student-roll"></span></p>
       <p><strong>Full Name:</strong> <span id="student-name"></span></p>
     </div>
 
-    <div class="d-flex justify-content-center">
+    <div class="table-responsive mt-3">
       <table>
         <tr>
           <th colspan="6">Q1</th>
@@ -119,10 +137,12 @@
           <td><input type="text"></td>
           <td><input type="text"></td>
           <td><input type="text"></td>
-          <td class="totalUT1">0</td>
+          <td></td>
         </tr>
       </table>
+    </div>
 
+    <div class="table-responsive mt-3">
       <table>
         <tr>
           <th colspan="6">Q1</th>
@@ -141,7 +161,7 @@
           <td>b</td>
           <td>a</td>
           <td>b</td>
-          <td class="totalUT2">0</td>
+          <td class="totalUT1">0</td>
         </tr>
         <tr>
           <td colspan="10">CO Mapping</td>
@@ -170,55 +190,72 @@
           <td><input type="text"></td>
           <td><input type="text"></td>
           <td><input type="text"></td>
-          <td class="totalUT2">0</td>
+          <td></td>
         </tr>
       </table>
-      
-      <div style="text-align: center; margin-top: 20px;">
-        <div style="display: inline-block; text-align: center;">
-          <table style="border: 1px solid black; border-collapse: collapse; font-size: 14px; width: 160px;">
-            <tr>
-              <th style="border: 1px solid black; padding: 5px;">Avg Unit Test Marks (Out of 20)</th>
-            </tr>
-            <tr>
-              <td id="avgMarks" style="border: 1px solid black; padding: 5px; text-align: center;">0</td>
-            </tr>
-          </table>
-          <br>
-          <button onclick="CalculateMarks()">Calculate Marks</button>
-        </div>
+    </div>
+
+
+    <div class="text-center mt-4">
+      <table class="table-bordered">
+        <tr>
+          <th>Avg Unit Test Marks (Out of 20)</th>
+        </tr>
+        <tr>
+          <td id="avgMarks">0</td>
+        </tr>
+      </table>
+      <div class="btn-group mt-3">
+        <button class="btn btn-primary" onclick="CalculateMarks()">Calculate Marks</button>
       </div>
     </div>
 
+    <div class="row mt-4 text-center">
+      <div class="col-md-4">
+        <table class="table-bordered">
+          <tr>
+            <th>External Examination (Total 80 Marks)</th>
+          </tr>
+          <tr>
+            <td><input type="number" id="externalMarks" min="0" max="80"></td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-md-4">
+        <table class="table-bordered">
+          <tr>
+            <th>Orals (Total 25 Marks)</th>
+          </tr>
+          <tr>
+            <td><input type="number" id="oralMarks" min="0" max="25"></td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-md-4">
+        <table class="table-bordered">
+          <tr>
+            <th>Term Work (Total 25 Marks)</th>
+          </tr>
+          <tr>
+            <td><input type="number" id="termWorkMarks" min="0" max="25"></td>
+          </tr>
+        </table>
+      </div>
 
-    <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
-      <table border="1" style="border-collapse: collapse; width: 17%; text-align: center;">
-        <tr>
-          <th>External Examination (Total 80 Marks)</th>
-        </tr>
-        <tr>
-          <td><input type="number" id="externalMarks" min="0" max="80" style="width: 90%; text-align: center;"></td>
-        </tr>
-      </table>
+      <div class="text-center mt-4">
+        <button class="btn btn-success" onclick="CalculateCGPA()">Calculate CGPA</button>
+        <button class="btn btn-warning" onclick="SaveData()">Save</button>
+        <button class="btn btn-secondary" onclick="NextStudent()">Next</button>
+      </div>
 
-      <table border="1" style="border-collapse: collapse; width: 10%; text-align: center;">
-        <tr>
-          <th>Orals (Total 25 Marks)</th>
-        </tr>
-        <tr>
-          <td><input type="number" id="oralMarks" min="0" max="25" style="width: 90%; text-align: center;"></td>
-        </tr>
-      </table>
+      <!-- CGPA Message Display -->
+      <div id="cgpa-message" class="text-center mt-3" style="font-size: 20px; font-weight: bold; color: #dc3545;">
+        <p><strong>Calculated CGPA: </strong><span id="cgpa-box">0</span></p>
 
-      <table border="1" style="border-collapse: collapse; width: 10%; text-align: center;">
-        <tr>
-          <th>Term Work (Total 25 Marks)</th>
-        </tr>
-        <tr>
-          <td><input type="number" id="termWorkMarks" min="0" max="25" style="width: 90%; text-align: center;"></td>
-        </tr>
-      </table>
+      </div>
+
     </div>
+
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
@@ -257,7 +294,7 @@
 
             // Validation
             if (value > maxMarks) {
-              alert(`Q${ index % 10 < 6 ? 1 : index % 10 < 8 ? 2 : 3} Column ${ String.fromCharCode(97 + (index % 10)) } cannot be more than ${ maxMarks } marks.`);
+              alert(`Q${index % 10 < 6 ? 1 : index % 10 < 8 ? 2 : 3} Column ${String.fromCharCode(97 + (index % 10))} cannot be more than ${maxMarks} marks.`);
               input.value = maxMarks;
               valid = false;
             }
@@ -279,6 +316,129 @@
           let avgMarks = (totalUT1 + totalUT2) / 2;
           document.getElementById("avgMarks").innerText = avgMarks.toFixed(2);
         }
+      }
+
+      function CalculateCGPA() {
+        let avgMarks = parseFloat(document.getElementById("avgMarks").innerText) || 0;
+        let externalMarks = parseFloat(document.getElementById("externalMarks").value) || 0;
+        let oralMarks = parseFloat(document.getElementById("oralMarks").value) || 0;
+        let termWorkMarks = parseFloat(document.getElementById("termWorkMarks").value) || 0;
+
+        let totalMarks = avgMarks + externalMarks + oralMarks + termWorkMarks;
+
+        // Assuming max total marks is 150, normalize to a 10-point scale
+        let cgpa = (totalMarks / 150) * 10;
+        if (cgpa > 10) cgpa = 10; // Ensuring CGPA doesn't exceed 10
+
+        // ✅ Corrected: Update `cgpa-box` instead of a missing `cgpa`
+        document.getElementById("cgpa-box").innerText = cgpa.toFixed(2);
+
+        // ✅ Update the CGPA message display
+        document.getElementById("cgpa-message").innerHTML = `CGPA is: <span style="color: #007bff; font-weight: bold;">${cgpa.toFixed(2)}</span>`;
+      }
+
+
+      function SaveData() {
+    let rollElement = document.getElementById("student-roll");
+    let nameElement = document.getElementById("student-name");
+    let avgMarksElement = document.getElementById("avgMarks");
+    let externalElement = document.getElementById("externalMarks");
+    let oralElement = document.getElementById("oralMarks");
+    let termWorkElement = document.getElementById("termWorkMarks");
+
+    // Ensure required elements exist
+    if (!rollElement || !nameElement || !avgMarksElement ||
+        !externalElement || !oralElement || !termWorkElement) {
+        console.error("One or more elements are missing in the HTML!");
+        alert("Error: Some required fields are missing!");
+        return;
+    }
+
+    // Collect Student Data
+    let studentData = {
+        student_id: parseInt(rollElement.innerText.trim()) || 0,
+        avg_unit_test_marks: parseFloat(avgMarksElement.innerText) || 0,
+        external_exam: parseInt(externalElement.value) || 0,
+        orals: parseInt(oralElement.value) || 0,
+        term_work: parseInt(termWorkElement.value) || 0,
+        cgpa: 0.0,  // Placeholder, calculated in backend
+
+        // Collect Unit Test Marks
+        unit_test_marks: collectUnitTestMarks(),
+
+        // Collect CO Mapping Data
+        co_mapping: collectCOMapping()
+    };
+
+    console.log("Sending Data:", JSON.stringify(studentData, null, 2)); // Debugging log
+
+    // Send Data to Backend
+    fetch("/save_data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(studentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert("Error: " + data.error);
+        } else {
+            alert("Success: " + data.message);
+        }
+    })
+    .catch(error => console.error("Error:", error));
+}
+
+// Function to Collect Unit Test Marks
+function collectUnitTestMarks() {
+    let unitTestData = [];
+    let unitTests = document.querySelectorAll(".unit-test-input");
+
+    unitTests.forEach(input => {
+        let unitTestNumber = input.getAttribute("data-ut");  // Use getAttribute instead of dataset
+        let questionNumber = input.getAttribute("data-qn");
+        let marks = parseInt(input.value) || 0;
+
+        if (unitTestNumber && questionNumber) {
+            unitTestData.push({
+                unit_test_number: parseInt(unitTestNumber),
+                question_number: questionNumber,
+                marks: marks
+            });
+        }
+    });
+
+    console.log("Unit Test Marks:", unitTestData); // Debugging log
+    return unitTestData;
+}
+
+// Function to Collect CO Mapping Data
+function collectCOMapping() {
+    let coMappingData = [];
+    let coInputs = document.querySelectorAll(".co-mapping-input");
+
+    coInputs.forEach(input => {
+        let unitTestNumber = input.getAttribute("data-ut");
+        let questionNumber = input.getAttribute("data-qn");
+        let coValue = input.value.trim();
+
+        if (unitTestNumber && questionNumber) {
+            coMappingData.push({
+                unit_test_number: parseInt(unitTestNumber),
+                question_number: questionNumber,
+                co_value: coValue
+            });
+        }
+    });
+
+    console.log("CO Mapping Data:", coMappingData); // Debugging log
+    return coMappingData;
+}
+
+
+      function NextStudent() {
+        alert("Moving to next student...");
+        window.location.href = "/next-student";
       }
 
       function logout() {

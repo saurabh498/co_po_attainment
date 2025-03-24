@@ -10,7 +10,7 @@ from datetime import datetime
 from flask_sqlalchemy import session
 from flask import session, redirect, url_for
 from sqlalchemy.sql import func
-
+import pdfkit
 
 pymysql.install_as_MySQLdb()
 
@@ -91,15 +91,39 @@ class Student(db.Model):
             'full_name': self.full_name
         }
 
+class StudentMarks(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    avg_unit_test_marks = db.Column(db.Float, default=0.0)
+    external_exam = db.Column(db.Integer, default=0)
+    orals = db.Column(db.Integer, default=0)
+    term_work = db.Column(db.Integer, default=0)
+    cgpa = db.Column(db.Float, default=0.0)
 
-class ExamResult(db.Model):  
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  
-    roll_no = db.Column(db.String(20), nullable=False)  
-    exam_name = db.Column(db.String(100), nullable=False)  
-    exam_type = db.Column(db.String(20))  # Make sure this exists!
-    total_marks = db.Column(db.Integer, nullable=False)  
-    marks_obtained = db.Column(db.Integer, nullable=False)  
-    cgpa = db.Column(db.Numeric(4,2), default=None)   
+    # Relationship with UnitTestMarks and CO_Mapping
+    unit_test_marks = db.relationship('UnitTestMarks', backref='student_marks', cascade="all, delete", lazy=True)
+    co_mapping = db.relationship('CO_Mapping', backref='student_marks', cascade="all, delete", lazy=True)
+
+class UnitTestMarks(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_marks_id = db.Column(db.Integer, db.ForeignKey('student_marks.id'), nullable=False, index=True)
+    unit_test_number = db.Column(db.Integer, nullable=False)  # 1 for UT1, 2 for UT2
+    question_number = db.Column(db.String(10), nullable=False)  # e.g., "Q1_A", "Q2_B"
+    marks = db.Column(db.Integer, default=0)
+
+    # Unique constraint to avoid duplicate entries for the same student, test, and question
+    __table_args__ = (db.UniqueConstraint('student_marks_id', 'unit_test_number', 'question_number', name='unique_question_per_test'),)
+
+class CO_Mapping(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_marks_id = db.Column(db.Integer, db.ForeignKey('student_marks.id'), nullable=False, index=True)
+    unit_test_number = db.Column(db.Integer, nullable=False)
+    question_number = db.Column(db.String(10), nullable=False)  # e.g., "Q1_A", "Q2_B"
+    co_value = db.Column(db.String(10))
+
+    # Unique constraint to avoid duplicate CO mappings for the same question
+    __table_args__ = (db.UniqueConstraint('student_marks_id', 'unit_test_number', 'question_number', name='unique_co_mapping'),)
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -467,71 +491,77 @@ def delete_student():
     return jsonify({'message': 'Student deleted successfully'})
 
 
-
-
 @app.route('/cgpa_calculation')
 def cgpa_calculation():
     return render_template('cgpa_calculation.html')
 
-@app.route('/store_exam', methods=['POST'])
-def store_exam():
-    data = request.get_json()  # Get JSON data from request
+@app.route('/calculate_cgpa', methods=['POST'])
+def calculateCgpa():
+    try:
+        # Get form data
+        avg_marks = float(request.form.get('avgMarks', 0))
+        external_marks = float(request.form.get('externalMarks', 0))
+        oral_marks = float(request.form.get('oralMarks', 0))
+        term_work_marks = float(request.form.get('termWorkMarks', 0))
+
+        # Calculate total marks
+        total_marks = avg_marks + external_marks + oral_marks + term_work_marks
+
+        # Normalize CGPA on a 10-point scale
+        cgpa = (total_marks / 150) * 10
+        if cgpa > 10:
+            cgpa = 10
+
+        return jsonify({"cgpa": round(cgpa, 2)})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
     
-    if not isinstance(data, list):
-        return jsonify({"error": "Invalid data format. Expected a list."}), 400
+@app.route('/save_data', methods=['POST'])
+def save_data():
+    try:
+        data = request.get_json()
+        print("Received data:", data)  # Debugging line to check incoming data
 
-    results = []  # Placeholder to store received data
+        student_id = data.get('student_id')
+        if not student_id:
+            return jsonify({"error": "Missing student_id"}), 400
 
-    for entry in data:
-        roll_no = entry.get('roll_no')
-        exam_name = entry.get('exam_name')
-        subject_code = entry.get('subject_code')
-        marks = entry.get('marks')
+        # Insert into student_marks
+        new_student_marks = StudentMarks(
+            avg_unit_test_marks=data.get('avgMarks', 0),
+            external_exam=data.get('external', 0),
+            orals=data.get('oral', 0),
+            term_work=data.get('termWork', 0),
+            cgpa=data.get('cgpa', 0.0)
+        )
+        db.session.add(new_student_marks)
+        db.session.commit()  # Commit to get the ID
 
-        if not roll_no or not exam_name or not subject_code or marks is None:
-            return jsonify({"error": "Missing required fields"}), 400
+        # Insert CO Mapping if data exists
+        co_mappings = data.get('co_mapping', [])  # Expecting list of mappings
+        for co in co_mappings:
+            new_co_mapping = CO_Mapping(
+                student_marks_id=new_student_marks.id,
+                unit_test_number=co.get('unit_test_number', 1),
+                question_number=co.get('question_number', ""),
+                co_value=co.get('co_value', "")
+            )
+            db.session.add(new_co_mapping)
 
-        results.append(entry)  # Store data in a list (temporary storage)
-    data = request.get_json()  # Get JSON data from request
-    
-    if not isinstance(data, list):
-        return jsonify({"error": "Invalid data format. Expected a list."}), 400
+        db.session.commit()
+        return jsonify({"message": "Data saved successfully!"}), 201
 
-    results = []  # Placeholder to store received data
-
-    for entry in data:
-        roll_no = entry.get('roll_no')
-        exam_name = entry.get('exam_name')
-        subject_code = entry.get('subject_code')
-        marks = entry.get('marks')
-
-        if not roll_no or not exam_name or not subject_code or marks is None:
-            return jsonify({"error": "Missing required fields"}), 400
-
-        results.append(entry)  # Store data in a list (temporary storage)
-    
-    print("Received Exam Data:", results)  # Debugging: Print received data
-    return jsonify({"message": "Exam results stored successfully", "data": results}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
-    
-@app.route('/get_exams/<roll_no>', methods=['GET'])
-def get_exams(roll_no):
-    exams = ExamResult.query.filter_by(roll_no=roll_no).all()
-    if not exams:
-        return jsonify({'message': 'No exam records found'}), 404
-    
-    results = []
-    for exam in exams:
-        results.append({
-            'exam_type': exam.exam_type,
-            'subject_code': exam.subject_code,
-            'marks_obtained': exam.marks_obtained,
-            'total_marks': exam.total_marks,
-            'date': exam.date.strftime('%Y-%m-%d')
-        })
-    
-    return jsonify({'exam_results': results})
+
+
+@app.route('/next_student', methods=['POST'])
+def next_student():
+    return jsonify({"message": "Next student loaded!"})
 
 
 if __name__ == "__main__":
