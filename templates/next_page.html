@@ -154,10 +154,8 @@
         }
 
         function selectStudent(rollNo, fullName) {
-    let selectedStudents = JSON.parse(sessionStorage.getItem("selected_students")) || [];
-    selectedStudents.push({ roll_no: rollNo, full_name: fullName });
-    sessionStorage.setItem("selected_students", JSON.stringify(selectedStudents));
-
+            sessionStorage.setItem("selected_roll_no", rollNo);
+            sessionStorage.setItem("selected_name", fullName);
             window.location.href = "/cgpa_calculation?roll_no=" + encodeURIComponent(rollNo);
         }
 

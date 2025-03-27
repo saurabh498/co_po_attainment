@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+        }
+        .container {
+            width: 90%;
+            margin: 20px auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .bright { background-color: #d4edda; }
+        .weak { background-color: #f8d7da; }
+        .improvement { background-color: #fff3cd; }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bright & Weak Students Analysis</h1>
+        <input type="text" id="searchInput" placeholder="Search by name or roll no..." onkeyup="filterTable()">
+        <table id="studentTable">
+            <thead>
+                <tr>
+                    <th>Roll No.</th>
+                    <th>Name</th>
+                    <th>Class Test 1 Marks</th>
+                    <th>Class Test 1 %</th>
+                    <th>Class Test 2 Marks</th>
+                    <th>Class Test 2 %</th>
+                    <th>Bright/Weak Student</th>
+                    <th>Observation</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <button onclick="processData()">Analyze Performance</button>
+    </div>
+
+    <script>
+        function fetchStudentData() {
+            // Check URL parameters from previous page
+            const urlParams = new URLSearchParams(window.location.search);
+            const rollNo = urlParams.get('roll_no');
+
+            fetch('/get_all_marks')
+                .then(response => response.json())
+                .then(data => {
+                    // Filter by roll_no if provided, else show all
+                    const studentData = rollNo ? data.filter(s => s.roll_no === rollNo) : data;
+                    loadTableData(studentData.map(student => ({
+                        roll: student.roll_no,
+                        name: student.student_name,
+                        ct1: student.total_ext / 4, // Scale 80 to 20 (optional)
+                        ct2: student.total_int // Already max 20
+                    })));
+                })
+                .catch(error => {
+                    console.error("Error fetching student data:", error);
+                    document.getElementById("tableBody").innerHTML = "<tr><td colspan='8'>Error loading data</td></tr>";
+                });
+        }
+
+        function loadTableData(studentData) {
+            const tableBody = document.getElementById("tableBody");
+            tableBody.innerHTML = "";
+
+            if (studentData.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='8'>No students found</td></tr>";
+                return;
+            }
+
+            studentData.forEach(student => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${student.roll}</td>
+                    <td>${student.name}</td>
+                    <td><input type="number" min="0" max="20" class="ct1" data-roll="${student.roll}" value="${student.ct1 || ''}" oninput="calculatePercentage(this, 1)"></td>
+                    <td class="ct1p" data-roll="${student.roll}">${student.ct1 ? ((student.ct1 / 20) * 100).toFixed(2) + '%' : '0%'}</td>
+                    <td><input type="number" min="0" max="20" class="ct2" data-roll="${student.roll}" value="${student.ct2 || ''}" oninput="calculatePercentage(this, 2)"></td>
+                    <td class="ct2p" data-roll="${student.roll}">${student.ct2 ? ((student.ct2 / 20) * 100).toFixed(2) + '%' : '0%'}</td>
+                    <td class="status" data-roll="${student.roll}"></td>
+                    <td class="observation" data-roll="${student.roll}"></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function calculatePercentage(input, testNumber) {
+            let rollNo = input.getAttribute("data-roll");
+            let marks = parseFloat(input.value) || 0;
+            let percentage = (marks / 20) * 100;
+
+            document.querySelector(`.ct${testNumber}p[data-roll="${rollNo}"]`).innerText = `${percentage.toFixed(2)}%`;
+        }
+
+        function processData() {
+            const rows = document.querySelectorAll("#tableBody tr");
+            rows.forEach(row => {
+                let rollNo = row.querySelector(".ct1").getAttribute("data-roll");
+                let ct1p = parseFloat(document.querySelector(`.ct1p[data-roll="${rollNo}"]`).innerText) || 0;
+                let ct2p = parseFloat(document.querySelector(`.ct2p[data-roll="${rollNo}"]`).innerText) || 0;
+                let status = determineStatus(ct1p, ct2p);
+
+                row.querySelector(`.status[data-roll="${rollNo}"]`).innerText = status;
+                row.querySelector(`.status[data-roll="${rollNo}"]`).className = `status ${getClass(status)}`;
+                row.querySelector(`.observation[data-roll="${rollNo}"]`).innerText = (status === "Improvement") ? "Needs Attention" : "";
+                row.querySelector(`.observation[data-roll="${rollNo}"]`).className = `observation ${getClass(status)}`;
+            });
+        }
+
+        function determineStatus(ct1p, ct2p) {
+            if (ct1p >= 75 && ct2p >= 75) return "Bright Student";
+            if (ct1p < 40 || ct2p < 40) return "Weak Student";
+            return "Improvement";
+        }
+
+        function getClass(status) {
+            if (!status) return "";
+            if (status.includes("Bright")) return "bright";
+            if (status.includes("Weak")) return "weak";
+            if (status.includes("Improvement")) return "improvement";
+            return "";
+        }
+
+        function filterTable() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let rows = document.querySelectorAll("#tableBody tr");
+            rows.forEach(row => {
+                let name = row.cells[1].textContent.toLowerCase();
+                let roll = row.cells[0].textContent;
+                row.style.display = (name.includes(input) || roll.includes(input)) ? "" : "none";
+            });
+        }
+
+        window.onload = fetchStudentData;
+    </script>
+</body>
+</html>

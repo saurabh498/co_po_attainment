@@ -142,6 +142,27 @@ class CourseExitForm(db.Model):
         self.q5 = q5
         self.q6 = q6
 
+class DirectAssessment(db.Model):
+    __tablename__ = "direct_assessment"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    roll_no = db.Column(db.String(20), nullable=False)
+    student_name = db.Column(db.String(100), nullable=False)
+    total_ext = db.Column(db.Integer, nullable=False)  # Max 80
+    total_int = db.Column(db.Integer, nullable=False)  # Max 20
+    total_marks = db.Column(db.Integer, nullable=False)  # Max 100
+    grade = db.Column(db.String(5))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "roll_no": self.roll_no,
+            "student_name": self.student_name,
+            "total_ext": self.total_ext,
+            "total_int": self.total_int,
+            "total_marks": self.total_marks,
+            "grade": self.grade
+        }
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -632,6 +653,89 @@ def delete(roll_no):
 @app.route('/direct_assesment')
 def direct_assesment():
     return render_template('direct_assesment.html')
+
+@app.route('/get_student_name', methods=['GET'])
+def get_student_name():
+    roll_no = request.args.get('roll_no')
+    if not roll_no:
+        return jsonify({'message': 'Roll number is required'}), 400
+
+    student = Student.query.filter_by(roll_no=roll_no).first()
+    if student:
+        return jsonify({'student_name': student.full_name})
+    else:
+        return jsonify({'message': 'Student not found'}), 404
+
+@app.route('/save_marks', methods=['POST'])
+def save_marks():
+    try:
+        data = request.get_json()  # Get the JSON data from frontend
+        if not data:
+            return jsonify({"message": "No data provided"}), 400
+
+        for entry in data:
+            # Check if record already exists (optional, based on roll_no)
+            existing = DirectAssessment.query.filter_by(roll_no=entry['roll_no']).first()
+            if existing:
+                # Update existing record
+                existing.student_name = entry['student_name']
+                existing.total_ext = entry['total_ext']
+                existing.total_int = entry['total_int']
+                existing.total_marks = entry['total_marks']
+                existing.grade = entry['grade']
+            else:
+                # Create new record
+                new_assessment = DirectAssessment(
+                    roll_no=entry['roll_no'],
+                    student_name=entry['student_name'],
+                    total_ext=entry['total_ext'],
+                    total_int=entry['total_int'],
+                    total_marks=entry['total_marks'],
+                    grade=entry['grade']
+                )
+                db.session.add(new_assessment)
+
+        db.session.commit()
+        return jsonify({"message": "Data saved successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()  # Rollback on error
+        return jsonify({"message": f"Error saving data: {str(e)}"}), 500
+    
+@app.route('/get_all_marks', methods=['GET'])
+def get_all_marks():
+    try:
+        assessments = DirectAssessment.query.all()  # Fetch all records
+        return jsonify([assessment.to_dict() for assessment in assessments]), 200
+    except Exception as e:
+        return jsonify({"message": f"Error fetching data: {str(e)}"}), 500
+
+@app.route('/delete_marks', methods=['POST'])
+def delete_marks():
+    try:
+        data = request.get_json()
+        roll_nos = data.get('roll_nos', [])
+
+        if not roll_nos:
+            return jsonify({"message": "No roll numbers provided"}), 400
+
+        # Delete records matching the roll numbers
+        deleted_count = DirectAssessment.query.filter(DirectAssessment.roll_no.in_(roll_nos)).delete(synchronize_session=False)
+        db.session.commit()
+
+        if deleted_count > 0:
+            return jsonify({"message": "Data deleted successfully"}), 200
+        else:
+            return jsonify({"message": "No matching records found"}), 404
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error deleting data: {str(e)}"}), 500        
+
+
+@app.route('/students_analysis')
+def students_analysis():
+    return render_template('students_analysis.html')
 
 
 

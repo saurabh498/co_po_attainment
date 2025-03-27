@@ -252,18 +252,21 @@
         }
 
         function direct_assesment() {
-    let rollNo = document.getElementById("rollNoInput").value.trim();
+    let rollNoInput = document.getElementById("rollNoInput");
+    let rollNo = rollNoInput.value.trim();
 
-    if (rollNo) {
+    if (/^\d+$/.test(rollNo)) {  // Validate only numeric roll numbers
+        sessionStorage.setItem("selected_roll_no", rollNo);
         let url = "/direct_assesment?roll_no=" + encodeURIComponent(rollNo);
         console.log("Redirecting to:", url);
         window.location.href = url;
     } else {
-        alert("Please enter Roll Number.");
+        rollNoInput.style.border = "2px solid red"; // Highlight input field
+        alert("Please enter a valid Roll Number.");
     }
 }
 
-
+        
         window.onload = getRollNoFromURL;
     </script>
 </body>
