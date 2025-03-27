@@ -245,7 +245,7 @@
       <div class="text-center mt-4">
         <button class="btn btn-success" onclick="CalculateCGPA()">Calculate CGPA</button>
         <button class="btn btn-warning" onclick="SaveData()">Save</button>
-        <button class="btn btn-secondary" onclick="NextStudent()">Next</button>
+        <button class="btn btn-secondary" onclick="course_exit_analysis()">Next</button>
       </div>
 
       <!-- CGPA Message Display -->
@@ -436,10 +436,15 @@ function collectCOMapping() {
 }
 
 
-      function NextStudent() {
-        alert("Moving to next student...");
-        window.location.href = "/next-student";
-      }
+function course_exit_analysis() {
+    let rollNo = sessionStorage.getItem("selected_roll_no");
+    if (rollNo) {
+        window.location.href = "/course_exit_analysis?roll_no=" + encodeURIComponent(rollNo);
+    } else {
+        alert("No student selected!");
+    }
+}
+
 
       function logout() {
         sessionStorage.clear();

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Assessment Marklist</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #e8f0ff;
+        }
+
+        input {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .grade {
+            display: inline-block;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 5px;
+            text-align: center;
+            width: 50px;
+            color: white;
+        }
+
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .view-btn {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .next-btn {
+            background: #ffc107;
+            color: black;
+        }
+
+        button:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Direct Assessment Marklist</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+                    <th>Total (Ext)</th>
+                    <th>Total (Int)</th>
+                    <th>Total</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody id="marklist">
+                <!-- Rows will be added dynamically -->
+            </tbody>
+        </table>
+
+        <div class="buttons">
+            <button class="save-btn" onclick="saveData()">Save</button>
+            <button class="view-btn" onclick="viewData()">View</button>
+            <button class="delete-btn" onclick="deleteData()">Delete</button>
+            <button class="next-btn" onclick="nextPage()">Next</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            console.log("Session Storage Data (Raw):", sessionStorage.getItem("selected_students")); // Debugging log
+
+            let studentsData = sessionStorage.getItem("selected_students");
+
+            if (!studentsData || studentsData === "null" || studentsData === "[]") {
+                alert("No students found! Please select students first.");
+                return;
+            }
+
+            let students = JSON.parse(studentsData);
+            console.log("Parsed students from sessionStorage:", students); // Debugging log
+
+            let tbody = document.getElementById("marklist");
+            tbody.innerHTML = "";
+
+            students.forEach(student => {
+                let row = document.createElement("tr");
+
+                row.innerHTML = `
+            <td>${student.roll_no}</td>
+            <td>${student.full_name}</td>
+            <td><input type="number" class="external" min="0" max="80" oninput="calculateTotal(this)"></td>
+            <td><input type="number" class="internal" min="0" max="20" oninput="calculateTotal(this)"></td>
+            <td><input type="number" class="total" readonly></td>
+            <td><input type="text" class="grade" readonly></td>
+        `;
+
+                tbody.appendChild(row);
+            });
+        };
+
+
+        // Function to Calculate Total Marks & Grade
+        function calculateTotal(input) {
+            let row = input.closest("tr");
+            let externalInput = row.querySelector(".external");
+            let internalInput = row.querySelector(".internal");
+            let totalCell = row.querySelector(".total");
+            let gradeCell = row.querySelector(".grade");
+
+            let externalMarks = parseInt(externalInput.value) || 0;
+            let internalMarks = parseInt(internalInput.value) || 0;
+
+            // Prevent negative marks
+            if (externalMarks < 0) externalMarks = 0;
+            if (internalMarks < 0) internalMarks = 0;
+
+            // Validation for External Marks (Max 80)
+            if (externalMarks > 80) {
+                alert("External marks cannot exceed 80.");
+                externalMarks = 80;
+                externalInput.value = 80;
+            }
+
+            // Validation for Internal Marks (Max 20)
+            if (internalMarks > 20) {
+                alert("Internal marks cannot exceed 20.");
+                internalMarks = 20;
+                internalInput.value = 20;
+            }
+
+            let total = externalMarks + internalMarks;
+
+            // Validation for Total Marks (Max 100)
+            if (total > 100) {
+                total = 100;
+            }
+
+            totalCell.value = total;
+
+            // Assign grade with color coding
+            if (total >= 90) {
+                gradeCell.value = "A+";
+                gradeCell.style.background = "#28a745";
+            } else if (total >= 80) {
+                gradeCell.value = "A";
+                gradeCell.style.background = "#17a2b8";
+            } else if (total >= 70) {
+                gradeCell.value = "B";
+                gradeCell.style.background = "#007bff";
+            } else if (total >= 60) {
+                gradeCell.value = "C";
+                gradeCell.style.background = "#ffc107";
+            } else if (total >= 50) {
+                gradeCell.value = "D";
+                gradeCell.style.background = "#fd7e14";
+            } else {
+                gradeCell.value = "F";
+                gradeCell.style.background = "#dc3545";
+            }
+        }
+
+        function saveData() {
+            let students = [];
+            document.querySelectorAll("#marklist tr").forEach(row => {
+                let data = {
+                    roll_no: row.cells[0].textContent,
+                    name: row.cells[1].textContent,
+                    external: row.cells[2].querySelector("input").value,
+                    internal: row.cells[3].querySelector("input").value,
+                    total: row.cells[4].querySelector("input").value,
+                    grade: row.cells[5].querySelector("input").value
+                };
+                students.push(data);
+            });
+            sessionStorage.setItem("saved_marks", JSON.stringify(students));
+            alert("Marks saved successfully!");
+        }
+
+        function viewData() {
+            let savedData = sessionStorage.getItem("saved_marks");
+            if (!savedData) return alert("No data saved!");
+            alert(JSON.stringify(JSON.parse(savedData), null, 2));
+        }
+
+        function deleteData() {
+            sessionStorage.removeItem("saved_marks");
+            alert("Saved data deleted!");
+        }
+
+        function nextPage() {
+            window.location.href = "next_page.html";
+        }
+    </script>
+
+</body>
+
+</html>

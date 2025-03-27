@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Exit Form Analysis</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        input {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .view-btn {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .next-btn {
+            background: #ffc107;
+            color: black;
+        }
+
+        button:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .table-container table {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Course Exit Form Analysis </h2>
+
+        <table>
+            <tr>
+                <th rowspan="3">Roll No</th>
+                <th colspan="6">Questions</th>
+            </tr>
+            <tr>
+                <th>Q1</th>
+                <th>Q2</th>
+                <th>Q3</th>
+                <th>Q4</th>
+                <th>Q5</th>
+                <th>Q6</th>
+            </tr>
+            <tr>
+                <th>CO1</th>
+                <th>CO2</th>
+                <th>CO3</th>
+                <th>CO4</th>
+                <th>CO5</th>
+                <th>CO6</th>
+            </tr>
+            <tbody>
+                <tr>
+                    <td><input type="text" id="rollNoInput" placeholder="Roll No" readonly></td>
+                    <td><input type="number" min="1" max="5" id="q1"></td>
+                    <td><input type="number" min="1" max="5" id="q2"></td>
+                    <td><input type="number" min="1" max="5" id="q3"></td>
+                    <td><input type="number" min="1" max="5" id="q4"></td>
+                    <td><input type="number" min="1" max="5" id="q5"></td>
+                    <td><input type="number" min="1" max="5" id="q6"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="buttons">
+            <button class="save-btn" onclick="saveData()">Save</button>
+            <button class="view-btn" onclick="viewData()">View</button>
+            <button class="delete-btn" onclick="deleteData()">Delete</button>
+            <button class="next-btn" onclick="direct_assesment()">Next</button>
+        </div>
+
+        <h3>Saved Data</h3>
+        <div class="table-container">
+            <table id="savedDataTable">
+                <tr>
+                    <th>Roll No</th>
+                    <th>Q1</th>
+                    <th>Q2</th>
+                    <th>Q3</th>
+                    <th>Q4</th>
+                    <th>Q5</th>
+                    <th>Q6</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function getRollNoFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const rollNo = urlParams.get('roll_no');
+            if (rollNo) {
+                document.getElementById("rollNoInput").value = rollNo;
+            }
+        }
+
+        function saveData() {
+            let rollNo = document.getElementById("rollNoInput").value;
+            if (!rollNo) {
+                alert("No Roll No provided!");
+                return;
+            }
+
+            let data = {
+                rollNo: rollNo,
+                q1: document.getElementById("q1").value || 0,
+                q2: document.getElementById("q2").value || 0,
+                q3: document.getElementById("q3").value || 0,
+                q4: document.getElementById("q4").value || 0,
+                q5: document.getElementById("q5").value || 0,
+                q6: document.getElementById("q6").value || 0,
+            };
+
+            localStorage.setItem(rollNo, JSON.stringify(data));
+            alert("Data saved successfully!");
+        }
+
+        function viewData() {
+            let table = document.getElementById("savedDataTable");
+            table.innerHTML = `
+                <tr>
+                    <th>Roll No</th>
+                    <th>Q1</th>
+                    <th>Q2</th>
+                    <th>Q3</th>
+                    <th>Q4</th>
+                    <th>Q5</th>
+                    <th>Q6</th>
+                </tr>`;
+
+            for (let i = 0; i < localStorage.length; i++) {
+                let rollNo = localStorage.key(i);
+                let data = JSON.parse(localStorage.getItem(rollNo));
+
+                let row = `<tr>
+                    <td>${data.rollNo}</td>
+                    <td>${data.q1}</td>
+                    <td>${data.q2}</td>
+                    <td>${data.q3}</td>
+                    <td>${data.q4}</td>
+                    <td>${data.q5}</td>
+                    <td>${data.q6}</td>
+                </tr>`;
+
+                table.innerHTML += row;
+            }
+        }
+
+        function deleteData() {
+            let rollNo = document.getElementById("rollNoInput").value;
+            if (localStorage.getItem(rollNo)) {
+                localStorage.removeItem(rollNo);
+                alert("Data deleted successfully!");
+                viewData();
+            } else {
+                alert("No data found for this Roll No!");
+            }
+        }
+
+        function direct_assesment() {
+    let rollNo = document.getElementById("rollNoInput").value.trim();
+
+    if (rollNo) {
+        let url = "/direct_assesment?roll_no=" + encodeURIComponent(rollNo);
+        console.log("Redirecting to:", url);
+        window.location.href = url;
+    } else {
+        alert("Please enter Roll Number.");
+    }
+}
+
+
+        window.onload = getRollNoFromURL;
+    </script>
+</body>
+
+</html>

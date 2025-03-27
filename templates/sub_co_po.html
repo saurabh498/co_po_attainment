@@ -172,45 +172,40 @@
 
 
         function calculateTotals() {
-    let table = document.querySelector(".table");
-    if (!table) {
-        console.error("Error: Table element not found!");
-        return;
-    }
+            let table = document.querySelector(".table");
+            if (!table) {
+                console.error("Error: Table element not found!");
+                return;
+            }
 
-    let totalRow = document.querySelectorAll("#total-row td:nth-child(n+2)");
-    let avgRow = document.querySelectorAll("#avg-row td:nth-child(n+2)");
-    let columns = document.querySelectorAll(".mapping-values");
+            let totalRow = document.querySelectorAll("#total-row td:nth-child(n+2)");
+            let avgRow = document.querySelectorAll("#avg-row td:nth-child(n+2)");
+            let columns = document.querySelectorAll(".mapping-values");
 
-    if (totalRow.length === 0 || avgRow.length === 0) {
-        console.error("Error: TotalRow or AvgRow elements not found!");
-        return;
-    }
+            if (totalRow.length === 0 || avgRow.length === 0) {
+                console.error("Error: TotalRow or AvgRow elements not found!");
+                return;
+            }
 
-    let totals = new Array(totalRow.length).fill(0);
-    let nonZeroCounts = new Array(totalRow.length).fill(0); // Track non-zero values per column
+            let totals = new Array(totalRow.length).fill(0);
+            let nonZeroCounts = new Array(totalRow.length).fill(0); // Track non-zero values per column
 
-    columns.forEach((input, index) => {
-        let colIndex = index % totalRow.length;
-        let value = parseFloat(input.value) || 0;
-        totals[colIndex] += value;
+            columns.forEach((input, index) => {
+                let colIndex = index % totalRow.length;
+                let value = parseFloat(input.value) || 0;
+                totals[colIndex] += value;
 
-        if (value > 0) {
-            nonZeroCounts[colIndex]++; // Count only non-zero values
+                if (value > 0) {
+                    nonZeroCounts[colIndex]++; // Count only non-zero values
+                }
+            });
+
+            totals.forEach((sum, index) => {
+                totalRow[index].innerText = sum; // Update Total Hrs
+                let count = nonZeroCounts[index] || 1; // Prevent division by zero
+                avgRow[index].innerText = (sum / count).toFixed(2); // ✅ Divide by non-zero count
+            });
         }
-    });
-
-    totals.forEach((sum, index) => {
-        totalRow[index].innerText = sum; // Update Total Hrs
-        let count = nonZeroCounts[index] || 1; // Prevent division by zero
-        avgRow[index].innerText = (sum / count).toFixed(2); // ✅ Divide by non-zero count
-    });
-}
-
-
-
-
-
 
         function saveData() {
             let subject = document.getElementById("subject").value.trim();
@@ -271,75 +266,96 @@
     }
 
     fetch(`/view_sub_co_po?subject=${encodeURIComponent(subject)}`)
-    .then(response => response.json())
-    .then(data => {
-        console.log("Response received:", data);  
-        
-        let coBody = document.getElementById("co-body");
-        let poBody = document.getElementById("po-body");
-        let mappingBody = document.getElementById("mapping-body");
-        let mappingHeader = document.getElementById("mapping-header");
+        .then(response => response.json())
+        .then(data => {
+            console.log("Response received:", data);
 
-        coBody.innerHTML = ""; // Clear CO Table
-        poBody.innerHTML = ""; // Clear PO Table
-        mappingBody.innerHTML = ""; // Clear CO-PO Mapping Table
+            let coBody = document.getElementById("co-body");
+            let poBody = document.getElementById("po-body");
+            let mappingBody = document.getElementById("mapping-body");
+            let mappingHeader = document.getElementById("mapping-header");
 
-        let uniquePOs = new Set();
-        let coSet = new Set();
+            coBody.innerHTML = ""; // Clear CO Table
+            poBody.innerHTML = ""; // Clear PO Table
+            mappingBody.innerHTML = ""; // Clear CO-PO Mapping Table
 
-        data.forEach(entry => {
-            // Populate CO Table
-            if (!coSet.has(entry.co_code)) {
-                coSet.add(entry.co_code);
-                let coRow = `<tr>
-                    <td><input type="text" class="form-control co-code" value="${entry.co_code}" readonly></td>
-                    <td><input type="text" class="form-control co-text" value="${entry.co_text}" readonly></td>
-                    <td><input type="text" class="form-control cognition" value="${entry.cognition}" readonly></td>
-                    <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()">Delete</button></td>
-                </tr>`;
-                coBody.innerHTML += coRow;
-            }
+            let uniquePOs = new Set();
+            let coSet = new Set();
 
-            // Populate PO Table (avoid duplicates)
-            if (!uniquePOs.has(entry.po_code)) {
-                uniquePOs.add(entry.po_code);
-                let poRow = `<tr>
-                    <td><input type="text" class="form-control po-code" value="${entry.po_code}" readonly></td>
-                    <td><input type="text" class="form-control po-text" value="${entry.po_text}" readonly></td>
-                    <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()">Delete</button></td>
-                </tr>`;
-                poBody.innerHTML += poRow;
-            }
-        });
-
-        // Populate CO-PO Mapping Table
-        generateMapping();  // Ensure headers are set correctly
-
-        let coRows = document.querySelectorAll("#mapping-body tr");
-        let poCodes = [...uniquePOs];
-
-        coRows.forEach((row, index) => {
-            let coCode = row.cells[0].innerText.trim();
             data.forEach(entry => {
-                if (entry.co_code === coCode) {
-                    poCodes.forEach((poCode, i) => {
-                        if (entry.po_code === poCode) {
-                            row.cells[i + 1].querySelector("input").value = entry.mapping_value;
-                        }
-                    });
+                // Populate CO Table
+                if (!coSet.has(entry.co_code)) {
+                    coSet.add(entry.co_code);
+                    let coRow = `<tr>
+                        <td><input type="text" class="form-control co-code" value="${entry.co_code}" readonly></td>
+                        <td><input type="text" class="form-control co-text" value="${entry.co_text}" readonly></td>
+                        <td><input type="text" class="form-control cognition" value="${entry.cognition}" readonly></td>
+                        <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()">Delete</button></td>
+                    </tr>`;
+                    coBody.innerHTML += coRow;
+                }
+
+                // Populate PO Table (avoid duplicates)
+                if (!uniquePOs.has(entry.po_code)) {
+                    uniquePOs.add(entry.po_code);
+                    let poRow = `<tr>
+                        <td><input type="text" class="form-control po-code" value="${entry.po_code}" readonly></td>
+                        <td><input type="text" class="form-control po-text" value="${entry.po_text}" readonly></td>
+                        <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()">Delete</button></td>
+                    </tr>`;
+                    poBody.innerHTML += poRow;
                 }
             });
+
+            // Ensure mapping headers exist before inserting data
+            generateMapping();
+
+            let coRows = document.querySelectorAll("#mapping-body tr");
+            let poCodes = [...uniquePOs];
+
+            coRows.forEach((row) => {
+                let coCode = row.cells[0]?.innerText.trim(); // Use optional chaining in case the row is empty
+                if (!coCode) return;
+
+                data.forEach(entry => {
+                    if (entry.co_code === coCode) {
+                        poCodes.forEach((poCode, i) => {
+                            if (entry.po_code === poCode) {
+                                let cell = row.cells[i + 1]; // Ensure the correct index exists
+                                if (cell && cell.querySelector("input")) {
+                                    cell.querySelector("input").value = entry.mapping_value;
+                                } else {
+                                    console.warn(`Skipping PO code ${poCode} for CO code ${coCode} - Cell not found!`);
+                                }
+                            }
+                        });
+
+                        // ✅ Populate Total Hours & Avg RSST (Ensure correct element IDs in your HTML)
+                        let totalHoursField = document.getElementById("total-hours");
+                        let avgValueField = document.getElementById("avg-value");
+
+                        if (totalHoursField) {
+                            totalHoursField.value = entry.total_hours;
+                        } else {
+                            console.warn("Total Hours field not found!");
+                        }
+
+                        if (avgValueField) {
+                            avgValueField.value = entry.avg_value;
+                        } else {
+                            console.warn("Avg RSST field not found!");
+                        }
+                    }
+                });
+            });
+
+            showAlert("Data loaded successfully!", "info");
+        })
+        .catch(error => {
+            console.error("Fetch error:", error);
+            showAlert("Error loading data!", "danger");
         });
-
-        showAlert("Data loaded successfully!", "info");
-    })
-    .catch(error => {
-        console.error("Fetch error:", error);
-        showAlert("Error loading data!", "danger");
-    });
 }
-
-
 
 
         function deleteSubject() {

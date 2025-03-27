@@ -123,6 +123,24 @@ class CO_Mapping(db.Model):
     # Unique constraint to avoid duplicate CO mappings for the same question
     __table_args__ = (db.UniqueConstraint('student_marks_id', 'unit_test_number', 'question_number', name='unique_co_mapping'),)
 
+class CourseExitForm(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    roll_no = db.Column(db.String(20), unique=True, nullable=False)
+    q1 = db.Column(db.Integer, nullable=False)
+    q2 = db.Column(db.Integer, nullable=False)
+    q3 = db.Column(db.Integer, nullable=False)
+    q4 = db.Column(db.Integer, nullable=False)
+    q5 = db.Column(db.Integer, nullable=False)
+    q6 = db.Column(db.Integer, nullable=False)
+
+    def __init__(self, roll_no, q1, q2, q3, q4, q5, q6):
+        self.roll_no = roll_no
+        self.q1 = q1
+        self.q2 = q2
+        self.q3 = q3
+        self.q4 = q4
+        self.q5 = q5
+        self.q6 = q6
 
 
 @login_manager.user_loader
@@ -556,12 +574,65 @@ def save_data():
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
+@app.route('/course_exit_analysis')
+def course_exit_analysis():
+    return render_template('course_exit_analysis.html')
+
+@app.route('/save', methods=['POST'])
+def save():
+    data = request.json
+    existing_entry = CourseExitForm.query.filter_by(roll_no=data['roll_no']).first()
+    
+    if existing_entry:
+        return jsonify({"message": "Roll No already exists!"}), 400
+    
+    new_entry = CourseExitForm(
+        roll_no=data['roll_no'],
+        q1=data['q1'],
+        q2=data['q2'],
+        q3=data['q3'],
+        q4=data['q4'],
+        q5=data['q5'],
+        q6=data['q6']
+    )
+    db.session.add(new_entry)
+    db.session.commit()
+    
+    return jsonify({"message": "Data saved successfully!"}), 200
+
+# View saved data
+@app.route('/view', methods=['GET'])
+def view():
+    entries = CourseExitForm.query.all()
+    results = [
+        {
+            "roll_no": entry.roll_no,
+            "q1": entry.q1,
+            "q2": entry.q2,
+            "q3": entry.q3,
+            "q4": entry.q4,
+            "q5": entry.q5,
+            "q6": entry.q6
+        }
+        for entry in entries
+    ]
+    return jsonify(results)
+
+# Delete data for a given Roll No
+@app.route('/delete/<roll_no>', methods=['DELETE'])
+def delete(roll_no):
+    entry = CourseExitForm.query.filter_by(roll_no=roll_no).first()
+    if entry:
+        db.session.delete(entry)
+        db.session.commit()
+        return jsonify({"message": "Data deleted successfully!"}), 200
+    return jsonify({"message": "Roll No not found!"}), 404
 
 
+@app.route('/direct_assesment')
+def direct_assesment():
+    return render_template('direct_assesment.html')
 
-@app.route('/next_student', methods=['POST'])
-def next_student():
-    return jsonify({"message": "Next student loaded!"})
 
 
 if __name__ == "__main__":
