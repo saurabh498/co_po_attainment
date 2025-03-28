@@ -113,6 +113,11 @@
             color: black;
         }
 
+        .upload-btn {
+            background: #6c757d;
+            color: white;
+        }
+
         button:hover {
             opacity: 0.8;
             transform: scale(1.05);
@@ -124,11 +129,9 @@
 
     <div class="container">
         <h2>Direct Assessment Marklist</h2>
-
         <table>
             <thead>
                 <tr>
-                    <th>Select</th>
                     <th>Roll No</th>
                     <th>Student Name</th>
                     <th>Total (Ext)</th>
@@ -139,22 +142,24 @@
             </thead>
             <tbody id="marklist">
                 <tr>
-                    <td><input type="checkbox" class="select-row" /></td> <!-- Checkbox -->
                     <td><input type="text" class="roll_no" placeholder="Enter Roll No" /></td>
-                    <td><input type="text" class="student_name" placeholder="Enter Student Name" readonly /></td>
+                    <td><input type="text" class="student_name" placeholder="Enter Student Name" /></td>
                     <td><input type="number" class="ext_total" placeholder="Enter External Total" /></td>
                     <td><input type="number" class="int_total" placeholder="Enter Internal Total" /></td>
-                    <td><input type="text" class="total" placeholder="Total" readonly /></td>
-                    <td><input type="text" class="grade" placeholder="Grade" readonly /></td>
+                    <td><input type="text" class="total" placeholder="Total" /></td>
+                    <td><input type="text" class="grade" placeholder="Grade" /></td>
                 </tr>
             </tbody>
         </table>
+
+
+        <input type="file" id="csvFile" accept=".csv" />
+        <button class="upload-btn" onclick="uploadCSV()">Upload CSV</button>
 
         <div class="buttons">
             <button class="add-btn" onclick="addRow()">Add Row</button>
             <button class="save-btn" onclick="saveData()">Save</button>
             <button class="view-btn" onclick="viewData()">View</button>
-            <button class="delete-btn" onclick="deleteData()">Delete</button>
             <button class="next-btn" onclick="students_analysis()">Next</button>
         </div>
 
@@ -169,6 +174,7 @@
                         <th>Total (Int)</th>
                         <th>Total</th>
                         <th>Grade</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="savedDataBody">
@@ -179,6 +185,62 @@
     </div>
 
     <script>
+
+        function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select a CSV file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const csvData = event.target.result;
+                parseCSV(csvData);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(csvData) {
+            const rows = csvData.split('\n');
+            let tableBody = document.getElementById('marklist');
+            tableBody.innerHTML = '';
+
+            for (let i = 1; i < rows.length; i++) { // Skip header row if present
+                const cols = rows[i].split(',').map(col => col.trim());
+                if (cols.length < 5) continue; // Ensure we have enough columns
+
+                // Calculate total from external and internal marks
+                const extTotal = parseInt(cols[2]) || 0;
+                const intTotal = parseInt(cols[3]) || 0;
+                const total = extTotal + intTotal;
+
+                // Calculate grade based on total
+                let grade = "";
+                if (total >= 90) grade = "A+";
+                else if (total >= 80) grade = "A";
+                else if (total >= 70) grade = "B";
+                else if (total >= 60) grade = "C";
+                else if (total >= 50) grade = "D";
+                else grade = "F";
+
+                // Create row with input fields matching the original structure
+                let row = document.createElement('tr');
+                row.innerHTML = `
+            <td><input type="text" class="roll_no" value="${cols[0]}" /></td>
+            <td><input type="text" class="student_name" value="${cols[1]}" readonly /></td>
+            <td><input type="number" class="ext_total" value="${extTotal}" min="0" max="80" /></td>
+            <td><input type="number" class="int_total" value="${intTotal}" min="0" max="20" /></td>
+            <td><input type="text" class="total" value="${total}" readonly /></td>
+            <td><input type="text" class="grade" value="${grade}" readonly /></td>
+        `;
+
+                tableBody.appendChild(row);
+                addEventListenersToRow(row); // Add event listeners to the new row
+            }
+        }
+
         // Function to calculate total and grade for a row
         function calculateTotalAndGrade(row) {
             // Get the input values
@@ -219,20 +281,6 @@
             gradeInput.value = grade;
         }
 
-        // Function to fetch student name based on the roll number
-        function fetchStudentName(rollNo, row) {
-            fetch("/get_student_name?roll_no=" + encodeURIComponent(rollNo))
-                .then(response => response.json())
-                .then(data => {
-                    if (data.student_name) {
-                        row.querySelector(".student_name").value = data.student_name;
-                    } else {
-                        alert("Student not found.");
-                    }
-                })
-                .catch(error => console.error("Error fetching student data:", error));
-        }
-
         // Add event listeners to all inputs dynamically
         function addEventListenersToRow(row) {
             // Roll No blur event
@@ -262,13 +310,12 @@
             let table = document.getElementById("marklist");
             let newRow = table.insertRow();
             newRow.innerHTML = `
-        <td><input type="checkbox" class="select-row" /></td>
         <td><input type="text" class="roll_no" placeholder="Enter Roll No" /></td>
-        <td><input type="text" class="student_name" placeholder="Enter Student Name" readonly /></td>
+        <td><input type="text" class="student_name" placeholder="Enter Student Name"  /></td>
         <td><input type="number" class="ext_total" placeholder="Enter External Total" min="0" max="80" /></td>
         <td><input type="number" class="int_total" placeholder="Enter Internal Total" min="0" max="20" /></td>
-        <td><input type="text" class="total" placeholder="Total" readonly /></td>
-        <td><input type="text" class="grade" placeholder="Grade" readonly /></td>
+        <td><input type="text" class="total" placeholder="Total"  /></td>
+        <td><input type="text" class="grade" placeholder="Grade"  /></td>
     `;
             addEventListenersToRow(newRow);
         }
@@ -287,23 +334,33 @@
         }
 
         // Placeholder functions (to be implemented later)
-        // Function to save data to the backend
         function saveData() {
             let rows = document.querySelectorAll("#marklist tr");
             let data = [];
 
-            // Collect data from each row
             rows.forEach(row => {
                 let rollNo = row.querySelector(".roll_no").value.trim();
                 let studentName = row.querySelector(".student_name").value.trim();
                 let totalExt = parseInt(row.querySelector(".ext_total").value) || 0;
                 let totalInt = parseInt(row.querySelector(".int_total").value) || 0;
-                let totalMarks = parseInt(row.querySelector(".total").value) || 0;
-                let grade = row.querySelector(".grade").value;
+                let grade = row.querySelector(".grade").value.trim();  // Grade is manually entered
 
-                // Basic validation
+                // Calculate Total Marks (Total = Ext + Int)
+                let totalMarks = totalExt + totalInt;
+
+                // Validation: Roll No and Student Name are required
                 if (!rollNo || !studentName) {
-                    alert("Please fill Roll No and Student Name for all rows.");
+                    alert("Please fill in Roll No and Student Name for all rows.");
+                    return;
+                }
+
+                // Validation: Ensure external marks are within 0-80 and internal marks within 0-20
+                if (totalExt < 0 || totalExt > 80) {
+                    alert(`Invalid External Marks for Roll No ${rollNo}. Must be between 0 and 80.`);
+                    return;
+                }
+                if (totalInt < 0 || totalInt > 20) {
+                    alert(`Invalid Internal Marks for Roll No ${rollNo}. Must be between 0 and 20.`);
                     return;
                 }
 
@@ -313,11 +370,11 @@
                     total_ext: totalExt,
                     total_int: totalInt,
                     total_marks: totalMarks,
-                    grade: grade
+                    grade: grade  // Grade is entered manually, no auto-calculation
                 });
             });
 
-            // If no data, exit
+            // If no valid data, exit
             if (data.length === 0) {
                 alert("No data to save.");
                 return;
@@ -345,6 +402,7 @@
                 });
         }
 
+
         function viewData() {
             fetch('/get_all_marks')
                 .then(response => response.json())
@@ -366,6 +424,7 @@
                         <td>${entry.total_int}</td>
                         <td>${entry.total_marks}</td>
                         <td>${entry.grade}</td>
+                        <td><button class="delete-btn" onclick="deleteRow('${entry.roll_no}')">Delete</button></td>
                     </tr>
                 `;
                         tbody.innerHTML += row;
@@ -377,52 +436,37 @@
                 });
         }
 
-        function deleteData() {
-            let rows = document.querySelectorAll("#marklist tr");
-            let rollNosToDelete = [];
-
-            rows.forEach(row => {
-                let checkbox = row.querySelector(".select-row");
-                if (checkbox && checkbox.checked) {
-                    let rollNo = row.querySelector(".roll_no").value.trim();
-                    if (rollNo) {
-                        rollNosToDelete.push(rollNo);
-                    }
-                }
-            });
-
-            if (rollNosToDelete.length === 0) {
-                alert("Please select at least one row to delete.");
-                return;
-            }
-
-            fetch('/delete_marks', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ roll_nos: rollNosToDelete })
-            })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.message === "Data deleted successfully") {
-                        alert("Data deleted successfully!");
-                        // Remove deleted rows from the table
-                        rows.forEach(row => {
-                            let checkbox = row.querySelector(".select-row");
-                            if (checkbox && checkbox.checked) {
-                                row.remove();
-                            }
-                        });
-                        viewData(); // Refresh the Saved Data table
-                    } else {
-                        alert("Error deleting data: " + result.message);
-                    }
+        function deleteRow(rollNo) {
+            if (confirm(`Are you sure you want to delete the record for Roll No ${rollNo}?`)) {
+                fetch('/delete_marks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ roll_nos: [rollNo] }) // Single Roll No in array
                 })
-                .catch(error => {
-                    console.error("Error deleting data:", error);
-                    alert("An error occurred while deleting data.");
-                });
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.message === "Data deleted successfully") {
+                            alert(`Record for Roll No ${rollNo} deleted successfully!`);
+                            // Remove the row from marklist table if it exists
+                            let rows = document.querySelectorAll("#marklist tr");
+                            rows.forEach(row => {
+                                let rollInput = row.querySelector(".roll_no");
+                                if (rollInput && rollInput.value.trim() === rollNo) {
+                                    row.remove();
+                                }
+                            });
+                            viewData(); // Refresh the Saved Data table
+                        } else {
+                            alert("Error deleting data: " + result.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error deleting data:", error);
+                        alert("An error occurred while deleting data.");
+                    });
+            }
         }
 
     </script>

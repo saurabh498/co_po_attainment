@@ -545,6 +545,65 @@ def save_course_data():
     db.session.commit()
     return jsonify({'message': 'Data saved successfully'})
 
+@app.route('/load_data', methods=['GET'])
+def load_data():
+    roll_no = request.args.get('roll_no')
+    
+    if not roll_no:
+        return jsonify({"error": "Missing roll_no parameter"}), 400
+
+    student = StudentMarks.query.filter_by(student_id=roll_no).first()
+    
+    if not student:
+        return jsonify({"message": "No data found"}), 404
+
+    unit_test_marks = UnitTestMarks.query.filter_by(student_marks_id=student.id, unit_test_number=1).all()
+    co_mapping = CO_Mapping.query.filter_by(student_marks_id=student.id, unit_test_number=1).all()
+
+    return jsonify({
+        "avg_unit_test_marks": student.avg_unit_test_marks,
+        "external_exam": student.external_exam,
+        "orals": student.orals,
+        "term_work": student.term_work,
+        "cgpa": student.cgpa,
+        "unit_test_marks": [
+            {"unit_test_number": ut.unit_test_number, "question_number": ut.question_number, "marks": ut.marks}
+            for ut in unit_test_marks
+        ],
+        "co_mapping": [
+            {"unit_test_number": co.unit_test_number, "question_number": co.question_number, "co_value": co.co_value}
+            for co in co_mapping
+        ]
+    })
+    roll_no = request.args.get('roll_no')
+    if not roll_no:
+        return jsonify({"error": "No roll number provided"}), 400
+    
+    unit_test_marks = UnitTestMarks.query.filter_by(roll_no=roll_no).all()
+    co_mapping = CO_Mapping.query.filter_by(roll_no=roll_no).all()
+    student_data = StudentMarks.query.filter_by(roll_no=roll_no).first()
+    
+    if not student_data:
+        return jsonify({"message": "No data found"})
+    
+    return jsonify({
+        "external_exam": student_data.external_exam,
+        "orals": student_data.orals,
+        "term_work": student_data.term_work,
+        "avg_unit_test_marks": student_data.avg_unit_test_marks,
+        "cgpa": student_data.cgpa,
+        "unit_test_marks": [{
+            "unit_test_number": utm.unit_test_number,
+            "question_number": utm.question_number,
+            "marks": utm.marks
+        } for utm in unit_test_marks],
+        "co_mapping": [{
+            "unit_test_number": co.unit_test_number,
+            "question_number": co.question_number,
+            "co_value": co.co_value
+        } for co in co_mapping]
+    })
+
 @app.route('/course_exit_analysis')
 def course_exit_analysis():
     return render_template('course_exit_analysis.html')
@@ -599,43 +658,47 @@ def delete_data(roll_no):
 def direct_assesment():
     return render_template('direct_assesment.html')
 
-@app.route('/get_student_name', methods=['GET'])
-def get_student_name():
-    roll_no = request.args.get('roll_no')
-    if not roll_no:
-        return jsonify({'message': 'Roll number is required'}), 400
-
-    student = Student.query.filter_by(roll_no=roll_no).first()
-    if student:
-        return jsonify({'student_name': student.full_name})
-    else:
-        return jsonify({'message': 'Student not found'}), 404
-
 @app.route('/save_marks', methods=['POST'])
 def save_marks():
     try:
-        data = request.get_json()  # Get the JSON data from frontend
-        if not data:
-            return jsonify({"message": "No data provided"}), 400
+        data = request.get_json()  # Get JSON data from frontend
+        if not data or not isinstance(data, list):
+            return jsonify({"message": "Invalid data format. Expected a list of records."}), 400
 
         for entry in data:
-            # Check if record already exists (optional, based on roll_no)
+            # Ensure required fields exist
+            if not all(k in entry for k in ["roll_no", "student_name", "total_ext", "total_int", "total_marks", "grade"]):
+                return jsonify({"message": "Missing required fields in request data"}), 400
+
+            # Validate numerical values
+            try:
+                total_ext = int(entry['total_ext'])
+                total_int = int(entry['total_int'])
+                total_marks = int(entry['total_marks'])
+            except ValueError:
+                return jsonify({"message": "Invalid number format in total_ext, total_int, or total_marks"}), 400
+
+            # Ensure total_ext and total_int are within valid ranges
+            if not (0 <= total_ext <= 80) or not (0 <= total_int <= 20):
+                return jsonify({"message": f"Invalid marks for Roll No {entry['roll_no']}. Check Ext (0-80) and Int (0-20)."}), 400
+
+            # Check if record already exists
             existing = DirectAssessment.query.filter_by(roll_no=entry['roll_no']).first()
             if existing:
                 # Update existing record
                 existing.student_name = entry['student_name']
-                existing.total_ext = entry['total_ext']
-                existing.total_int = entry['total_int']
-                existing.total_marks = entry['total_marks']
+                existing.total_ext = total_ext
+                existing.total_int = total_int
+                existing.total_marks = total_marks
                 existing.grade = entry['grade']
             else:
                 # Create new record
                 new_assessment = DirectAssessment(
                     roll_no=entry['roll_no'],
                     student_name=entry['student_name'],
-                    total_ext=entry['total_ext'],
-                    total_int=entry['total_int'],
-                    total_marks=entry['total_marks'],
+                    total_ext=total_ext,
+                    total_int=total_int,
+                    total_marks=total_marks,
                     grade=entry['grade']
                 )
                 db.session.add(new_assessment)
@@ -644,9 +707,9 @@ def save_marks():
         return jsonify({"message": "Data saved successfully"}), 200
 
     except Exception as e:
-        db.session.rollback()  # Rollback on error
+        db.session.rollback()  # Rollback any failed transactions
         return jsonify({"message": f"Error saving data: {str(e)}"}), 500
-    
+
 @app.route('/get_all_marks', methods=['GET'])
 def get_all_marks():
     try:
@@ -681,8 +744,6 @@ def delete_marks():
 @app.route('/students_analysis')
 def students_analysis():
     return render_template('students_analysis.html')
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
