@@ -110,7 +110,9 @@
           <td><input type="number" class="unit-test-input" data-ut="1" data-qn="3b" min="0" max="5"></td>
           <td class="totalUT1">0</td>
         </tr>
-        <tr><td colspan="11">UT1 CO Mapping</td></tr>
+        <tr>
+          <td colspan="11">UT1 CO Mapping</td>
+        </tr>
         <tr>
           <td><input type="text" class="co-mapping-input" data-ut="1" data-qn="1a"></td>
           <td><input type="text" class="co-mapping-input" data-ut="1" data-qn="1b"></td>
@@ -127,51 +129,7 @@
       </table>
     </div>
 
-    <!-- UT2 Table -->
-    <div class="table-responsive mt-3">
-      <table>
-        <tr>
-          <th colspan="6">Q1</th>
-          <th colspan="2">Q2</th>
-          <th colspan="2">Q3</th>
-          <th>Total UT2 (20 M)</th>
-        </tr>
-        <tr>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="1a" min="0" max="2"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="1b" min="0" max="2"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="1c" min="0" max="2"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="1d" min="0" max="2"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="1e" min="0" max="2"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="1f" min="0" max="2"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="2a" min="0" max="5"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="2b" min="0" max="5"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="3a" min="0" max="5"></td>
-          <td><input type="number" class="unit-test-input" data-ut="2" data-qn="3b" min="0" max="5"></td>
-          <td class="totalUT2">0</td>
-        </tr>
-        <tr><td colspan="11">UT2 CO Mapping</td></tr>
-        <tr>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="1a"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="1b"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="1c"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="1d"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="1e"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="1f"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="2a"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="2b"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="3a"></td>
-          <td><input type="text" class="co-mapping-input" data-ut="2" data-qn="3b"></td>
-          <td></td>
-        </tr>
-      </table>
-    </div>
-
-    <!-- Average Unit Test Marks -->
     <div class="text-center mt-4">
-      <table class="table-bordered">
-        <tr><th>Avg Unit Test Marks (Out of 20)</th></tr>
-        <tr><td id="avgMarks">0</td></tr>
-      </table>
       <div class="btn-group mt-3">
         <button class="btn btn-primary" onclick="CalculateMarks()">Calculate Marks</button>
       </div>
@@ -181,20 +139,32 @@
     <div class="row mt-4 text-center">
       <div class="col-md-4">
         <table class="table-bordered">
-          <tr><th>External Examination (Total 80 Marks)</th></tr>
-          <tr><td><input type="number" id="externalMarks" min="0" max="80"></td></tr>
+          <tr>
+            <th>External Examination (Total 80 Marks)</th>
+          </tr>
+          <tr>
+            <td><input type="number" id="externalMarks" min="0" max="80"></td>
+          </tr>
         </table>
       </div>
       <div class="col-md-4">
         <table class="table-bordered">
-          <tr><th>Orals (Total 25 Marks)</th></tr>
-          <tr><td><input type="number" id="oralMarks" min="0" max="25"></td></tr>
+          <tr>
+            <th>Orals (Total 25 Marks)</th>
+          </tr>
+          <tr>
+            <td><input type="number" id="oralMarks" min="0" max="25"></td>
+          </tr>
         </table>
       </div>
       <div class="col-md-4">
         <table class="table-bordered">
-          <tr><th>Term Work (Total 25 Marks)</th></tr>
-          <tr><td><input type="number" id="termWorkMarks" min="0" max="25"></td></tr>
+          <tr>
+            <th>Term Work (Total 25 Marks)</th>
+          </tr>
+          <tr>
+            <td><input type="number" id="termWorkMarks" min="0" max="25"></td>
+          </tr>
         </table>
       </div>
     </div>
@@ -214,22 +184,22 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-    let rollNo = sessionStorage.getItem("selected_roll_no");
-    let fullName = sessionStorage.getItem("selected_name");
+      let rollNo = sessionStorage.getItem("selected_roll_no");
+      let fullName = sessionStorage.getItem("selected_name");
 
-    if (!rollNo || !fullName) {
+      if (!rollNo || !fullName) {
         alert("No student selected!");
         window.location.href = "/";
         return;
-    }
+      }
 
-    document.getElementById("student-roll").innerText = rollNo;
-    document.getElementById("student-name").innerText = fullName;
+      document.getElementById("student-roll").innerText = rollNo;
+      document.getElementById("student-name").innerText = fullName;
 
-    fetch(`/load_data?roll_no=${rollNo}`)
-    .then(response => response.json())
-    .then(data => {
-        if (!data.error) {
+      fetch(`/load_data?roll_no=${rollNo}`)
+        .then(response => response.json())
+        .then(data => {
+          if (!data.error) {
             document.getElementById("avgMarks").innerText = data.avg_unit_test_marks;
             document.getElementById("externalMarks").value = data.external_exam;
             document.getElementById("oralMarks").value = data.orals;
@@ -237,27 +207,27 @@
             document.getElementById("cgpa-box").innerText = data.cgpa;
 
             data.unit_test_marks.forEach(ut => {
-                let input = document.querySelector(`.unit-test-input[data-ut="${ut.unit_test_number}"][data-qn="${ut.question_number}"]`);
-                if (input) input.value = ut.marks;
+              let input = document.querySelector(`.unit-test-input[data-ut="${ut.unit_test_number}"][data-qn="${ut.question_number}"]`);
+              if (input) input.value = ut.marks;
             });
 
             data.co_mapping.forEach(co => {
-                let input = document.querySelector(`.co-mapping-input[data-ut="${co.unit_test_number}"][data-qn="${co.question_number}"]`);
-                if (input) input.value = co.co_value;
+              let input = document.querySelector(`.co-mapping-input[data-ut="${co.unit_test_number}"][data-qn="${co.question_number}"]`);
+              if (input) input.value = co.co_value;
             });
 
             CalculateMarks(); // Recalculate totals
-        }
-    })
-    .catch(error => console.error("Error loading data:", error));
-});
+          }
+        })
+        .catch(error => console.error("Error loading data:", error));
+    });
 
     function CalculateMarks() {
-      let totalUT1 = 0, totalUT2 = 0;
+      let totalUT1 = 0;
       let valid = true;
 
+      // Select inputs from the UT1 table (the only table present in the HTML)
       let ut1Inputs = document.querySelectorAll("table:nth-of-type(1) .unit-test-input");
-      let ut2Inputs = document.querySelectorAll("table:nth-of-type(2) .unit-test-input");
 
       function validateAndSum(inputs) {
         let total = 0;
@@ -276,19 +246,28 @@
       }
 
       totalUT1 = validateAndSum(ut1Inputs);
-      totalUT2 = validateAndSum(ut2Inputs);
 
+      // Update the totalUT1 display in the table
       document.querySelector(".totalUT1").innerText = totalUT1;
-      document.querySelector(".totalUT2").innerText = totalUT2;
 
+      // Since there's no UT2 in the HTML, we'll treat totalUT1 as the sole unit test score
       if (valid) {
-        let avgMarks = (totalUT1 + totalUT2) / 2;
-        document.getElementById("avgMarks").innerText = avgMarks.toFixed(2);
+        // Store the totalUT1 as the average unit test marks (assuming only one UT for now)
+        // We’ll update this in the DOM; add an element with id="avgMarks" if needed
+        let avgMarksElement = document.getElementById("avgMarks");
+        if (avgMarksElement) {
+          avgMarksElement.innerText = totalUT1.toFixed(2); // Use UT1 as the average
+        } else {
+          console.warn("avgMarks element not found in DOM. Add <span id='avgMarks'>0</span> to HTML.");
+        }
       }
     }
 
     function CalculateCGPA() {
-      let avgMarks = parseFloat(document.getElementById("avgMarks").innerText) || 0;
+      // Get avgMarks from the DOM (assuming UT1 total is used as avgMarks)
+      let avgMarksElement = document.getElementById("avgMarks");
+      let avgMarks = avgMarksElement ? parseFloat(avgMarksElement.innerText) || 0 : parseFloat(document.querySelector(".totalUT1").innerText) || 0;
+
       let externalMarks = parseFloat(document.getElementById("externalMarks").value) || 0;
       let oralMarks = parseFloat(document.getElementById("oralMarks").value) || 0;
       let termWorkMarks = parseFloat(document.getElementById("termWorkMarks").value) || 0;
@@ -298,6 +277,7 @@
         return;
       }
 
+      // Total marks based on UT1 (20 max) + External (80 max) + Orals (25 max) + Term Work (25 max) = 150 max
       let totalMarks = avgMarks + externalMarks + oralMarks + termWorkMarks;
       let cgpa = (totalMarks / 150) * 10;
       if (cgpa > 10) cgpa = 10;
@@ -312,9 +292,13 @@
         return;
       }
 
+      // Get avgMarks from the DOM, fallback to totalUT1 if avgMarks isn’t present
+      let avgMarksElement = document.getElementById("avgMarks");
+      let avgUnitTestMarks = avgMarksElement ? parseFloat(avgMarksElement.innerText) || 0 : parseFloat(document.querySelector(".totalUT1").innerText) || 0;
+
       let studentData = {
         student_id: parseInt(document.getElementById("student-roll").innerText.trim()) || 0,
-        avg_unit_test_marks: parseFloat(document.getElementById("avgMarks").innerText) || 0,
+        avg_unit_test_marks: avgUnitTestMarks,  // Use UT1 total as avg since UT2 is absent
         external_exam: parseInt(document.getElementById("externalMarks").value) || 0,
         orals: parseInt(document.getElementById("oralMarks").value) || 0,
         term_work: parseInt(document.getElementById("termWorkMarks").value) || 0,
@@ -349,7 +333,8 @@
         let questionNumber = input.getAttribute("data-qn");
         let marks = parseFloat(input.value) || 0;
 
-        if (unitTestNumber && questionNumber) {
+        // Only include UT1 data (unit_test_number = 1) since HTML only has UT1
+        if (unitTestNumber && questionNumber && parseInt(unitTestNumber) === 1) {
           unitTestData.push({
             unit_test_number: parseInt(unitTestNumber),
             question_number: questionNumber,
@@ -370,7 +355,8 @@
         let questionNumber = input.getAttribute("data-qn");
         let coValue = input.value.trim();
 
-        if (unitTestNumber && questionNumber && coValue) {
+        // Only include UT1 data (unit_test_number = 1) since HTML only has UT1
+        if (unitTestNumber && questionNumber && coValue && parseInt(unitTestNumber) === 1) {
           coMappingData.push({
             unit_test_number: parseInt(unitTestNumber),
             question_number: questionNumber,
@@ -384,39 +370,65 @@
 
     function loadData() {
       let rollNo = sessionStorage.getItem("selected_roll_no");
-      fetch(`/load_data?roll_no=${rollNo}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.message === "No data found") return;
+      if (!rollNo) {
+        alert("No student selected!");
+        return;
+      }
 
-          document.getElementById("avgMarks").innerText = data.avg_unit_test_marks || 0;
+      fetch(`/load_data?roll_no=${rollNo}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.message === "No data found") {
+            const avgMarksEl = document.getElementById("avgMarks");
+            if (avgMarksEl) avgMarksEl.innerText = "0";
+            document.getElementById("externalMarks").value = "";
+            document.getElementById("oralMarks").value = "";
+            document.getElementById("termWorkMarks").value = "";
+            const cgpaBoxEl = document.getElementById("cgpa-box");
+            if (cgpaBoxEl) cgpaBoxEl.innerText = "0";
+            document.querySelectorAll(".unit-test-input").forEach(input => input.value = "");
+            document.querySelectorAll(".co-mapping-input").forEach(input => input.value = "");
+            CalculateMarks();
+            return;
+          }
+
+          const avgMarksEl = document.getElementById("avgMarks");
+          if (avgMarksEl) avgMarksEl.innerText = data.avg_unit_test_marks || 0;
           document.getElementById("externalMarks").value = data.external_exam || 0;
           document.getElementById("oralMarks").value = data.orals || 0;
           document.getElementById("termWorkMarks").value = data.term_work || 0;
-          document.getElementById("cgpa-box").innerText = data.cgpa || 0;
+          const cgpaBoxEl = document.getElementById("cgpa-box");
+          if (cgpaBoxEl) cgpaBoxEl.innerText = data.cgpa || 0;
 
           data.unit_test_marks.forEach(ut => {
-            let input = document.querySelector(`.unit-test-input[data-ut="${ut.unit_test_number}"][data-qn="${ut.question_number}"]`);
-            if (input) input.value = ut.marks;
+            if (ut.unit_test_number === 1) {
+              let input = document.querySelector(`.unit-test-input[data-ut="${ut.unit_test_number}"][data-qn="${ut.question_number}"]`);
+              if (input) input.value = ut.marks;
+            }
           });
 
           data.co_mapping.forEach(co => {
-            let input = document.querySelector(`.co-mapping-input[data-ut="${co.unit_test_number}"][data-qn="${co.question_number}"]`);
-            if (input) input.value = co.co_value;
+            if (co.unit_test_number === 1) {
+              let input = document.querySelector(`.co-mapping-input[data-ut="${co.unit_test_number}"][data-qn="${co.question_number}"]`);
+              if (input) input.value = co.co_value;
+            }
           });
 
-          CalculateMarks(); // Recalculate totals
+          CalculateMarks();
         })
-        .catch(error => console.error("Error loading data:", error));
+        .catch(error => {
+          console.error("Fetch error:", error.message);
+          alert(`Failed to load data: ${error.message}. Please try again.`);
+        });
     }
 
     function course_exit_analysis() {
-      let rollNo = sessionStorage.getItem("selected_roll_no");
-      if (rollNo) {
-        window.location.href = "/course_exit_analysis?roll_no=" + encodeURIComponent(rollNo);
-      } else {
-        alert("No student selected!");
-      }
+      window.location.href = "/course_exit_analysis";
     }
 
     function logout() {

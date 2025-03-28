@@ -96,33 +96,29 @@ class StudentMarks(db.Model):
     __tablename__ = 'student_marks'
     
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, nullable=False, unique=True)  # Added student_id
-    avg_unit_test_marks = db.Column(db.Float, default=0.0)
-    external_exam = db.Column(db.Float, default=0.0)
-    orals = db.Column(db.Float, default=0.0)
-    term_work = db.Column(db.Float, default=0.0)
-    cgpa = db.Column(db.Float, default=0.0)
-    unit_test_marks = db.Column(db.Text, default='[]')  # Store as JSON string
-    co_mapping = db.Column(db.Text, default='[]')
+    student_id = db.Column(db.Integer, nullable=False, unique=True)  # Roll number
+    avg_unit_test_marks = db.Column(db.Float, default=0.0)  # Average of UT1 (and UT2 if added later)
+    external_exam = db.Column(db.Float, default=0.0)  # Max 80
+    orals = db.Column(db.Float, default=0.0)  # Max 25
+    term_work = db.Column(db.Float, default=0.0)  # Max 25
+    cgpa = db.Column(db.Float, default=0.0)  # Calculated CGPA
 
 class UnitTestMarks(db.Model):
+    __tablename__ = 'unit_test_marks'
     id = db.Column(db.Integer, primary_key=True)
     student_marks_id = db.Column(db.Integer, db.ForeignKey('student_marks.id'), nullable=False, index=True)
-    unit_test_number = db.Column(db.Integer, nullable=False)  # 1 for UT1, 2 for UT2
-    question_number = db.Column(db.String(10), nullable=False)  # e.g., "Q1_A", "Q2_B"
-    marks = db.Column(db.Integer, default=0)
-
-    # Unique constraint to avoid duplicate entries for the same student, test, and question
+    unit_test_number = db.Column(db.Integer, nullable=False)  # 1 for UT1
+    question_number = db.Column(db.String(10), nullable=False)  # e.g., "1a", "2b", "3a"
+    marks = db.Column(db.Integer, default=0)  # Marks for each question
     __table_args__ = (db.UniqueConstraint('student_marks_id', 'unit_test_number', 'question_number', name='unique_question_per_test'),)
 
 class CO_Mapping(db.Model):
+    __tablename__ = 'co_mapping'
     id = db.Column(db.Integer, primary_key=True)
     student_marks_id = db.Column(db.Integer, db.ForeignKey('student_marks.id'), nullable=False, index=True)
-    unit_test_number = db.Column(db.Integer, nullable=False)
-    question_number = db.Column(db.String(10), nullable=False)  # e.g., "Q1_A", "Q2_B"
-    co_value = db.Column(db.String(10))
-
-    # Unique constraint to avoid duplicate CO mappings for the same question
+    unit_test_number = db.Column(db.Integer, nullable=False)  # 1 for UT1
+    question_number = db.Column(db.String(10), nullable=False)  # e.g., "1a", "2b", "3a"
+    co_value = db.Column(db.String(10))  # CO value (e.g., "CO1", "CO2")
     __table_args__ = (db.UniqueConstraint('student_marks_id', 'unit_test_number', 'question_number', name='unique_co_mapping'),)
 
 class CourseExitForm(db.Model):
@@ -506,162 +502,97 @@ def cgpa_calculation():
     return render_template('cgpa_calculation.html')
 
 @app.route('/save_data', methods=['POST'])
-def save_data():
-    try:
-        data = request.get_json()
-        
-        # Extract required fields
-        student_id = data.get('student_id')
-        if not student_id:
-            return jsonify({'error': 'Student ID is required'}), 400
+def save_course_data():
+    data = request.get_json()
+    if not data or 'student_id' not in data:
+        return jsonify({'error': 'Invalid data'}), 400
 
-        # Calculate CGPA
-        avg_unit_test_marks = float(data.get('avg_unit_test_marks', 0))
-        external_exam = float(data.get('external_exam', 0))
-        orals = float(data.get('orals', 0))
-        term_work = float(data.get('term_work', 0))
+    student = StudentMarks.query.filter_by(student_id=data['student_id']).first()
+    if not student:
+        student = StudentMarks(student_id=data['student_id'])
+        db.session.add(student)
 
-        # Validate maximum marks
-        if external_exam > 80:
-            return jsonify({'error': 'External exam marks cannot exceed 80'}), 400
-        if orals > 25:
-            return jsonify({'error': 'Oral marks cannot exceed 25'}), 400
-        if term_work > 25:
-            return jsonify({'error': 'Term work marks cannot exceed 25'}), 400
-        if avg_unit_test_marks > 20:
-            return jsonify({'error': 'Average unit test marks cannot exceed 20'}), 400
+    student.avg_unit_test_marks = data['avg_unit_test_marks']
+    student.external_exam = data['external_exam']
+    student.orals = data['orals']
+    student.term_work = data['term_work']
+    student.cgpa = data['cgpa']
 
-        # Calculate total marks and CGPA
-        total_marks = avg_unit_test_marks + external_exam + orals + term_work
-        cgpa = (total_marks / 150) * 10
-        if cgpa > 10:
-            cgpa = 10
-
-        # Check if student record exists
-        student = StudentMarks.query.filter_by(student_id=student_id).first()
-        
-        if student:
-            # Update existing record
-            student.avg_unit_test_marks = avg_unit_test_marks
-            student.external_exam = external_exam
-            student.orals = orals
-            student.term_work = term_work
-            student.cgpa = cgpa
-        else:
-            # Create new record
-            student = StudentMarks(
-                student_id=student_id,
-                avg_unit_test_marks=avg_unit_test_marks,
-                external_exam=external_exam,
-                orals=orals,
-                term_work=term_work,
-                cgpa=cgpa
+    # Clear and update Unit Test Marks for UT1
+    UnitTestMarks.query.filter_by(student_marks_id=student.id, unit_test_number=1).delete()
+    for ut in data['unit_test_marks']:
+        if ut['unit_test_number'] == 1:  # Only UT1 based on HTML
+            ut_record = UnitTestMarks(
+                student_marks_id=student.id,
+                unit_test_number=ut['unit_test_number'],
+                question_number=ut['question_number'],
+                marks=ut['marks']
             )
-            db.session.add(student)
+            db.session.add(ut_record)
 
-        # Handle CO Mapping
-        co_mapping_data = data.get('co_mapping', [])
-        if co_mapping_data:
-            # Delete existing CO mappings for this student
-            CO_Mapping.query.filter_by(student_id=student_id).delete()
-            
-            # Add new CO mappings
-            for co in co_mapping_data:
-                co_entry = CO_Mapping(
-                    student_id=student_id,
-                    unit_test_number=co.get('unit_test_number'),
-                    question_number=co.get('question_number'),
-                    co_value=co.get('co_value', '')
-                )
-                db.session.add(co_entry)
+    # Clear and update CO Mapping for UT1
+    CO_Mapping.query.filter_by(student_marks_id=student.id, unit_test_number=1).delete()
+    for co in data['co_mapping']:
+        if co['unit_test_number'] == 1:  # Only UT1 based on HTML
+            co_record = CO_Mapping(
+                student_marks_id=student.id,
+                unit_test_number=co['unit_test_number'],
+                question_number=co['question_number'],
+                co_value=co['co_value']
+            )
+            db.session.add(co_record)
 
-        db.session.commit()
-
-        # Prepare response data
-        co_mappings = CO_Mapping.query.filter_by(student_id=student_id).all()
-        response_data = {
-            'student_id': student_id,
-            'avg_unit_test_marks': round(avg_unit_test_marks, 2),
-            'external_exam': external_exam,
-            'orals': orals,
-            'term_work': term_work,
-            'cgpa': round(cgpa, 2),
-            'unit_test_marks': data.get('unit_test_marks', []),
-            'co_mapping': [{
-                'unit_test_number': co.unit_test_number,
-                'question_number': co.question_number,
-                'co_value': co.co_value
-            } for co in co_mappings]
-        }
-
-        return jsonify({
-            'message': 'Data saved successfully',
-            'data': response_data
-        }), 200
-
-    except pymysql.IntegrityError:
-        db.session.rollback()
-        return jsonify({'error': 'Student ID already exists'}), 400
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-# Route to Load Data
-
+    db.session.commit()
+    return jsonify({'message': 'Data saved successfully'})
 
 @app.route('/course_exit_analysis')
 def course_exit_analysis():
     return render_template('course_exit_analysis.html')
 
+# Save Data (Insert into DB)
 @app.route('/save', methods=['POST'])
-def save():
+def save_data():
     data = request.json
-    existing_entry = CourseExitForm.query.filter_by(roll_no=data['roll_no']).first()
+    new_entry = CourseExitForm(**data)
     
-    if existing_entry:
-        return jsonify({"message": "Roll No already exists!"}), 400
-    
-    new_entry = CourseExitForm(
-        roll_no=data['roll_no'],
-        q1=data['q1'],
-        q2=data['q2'],
-        q3=data['q3'],
-        q4=data['q4'],
-        q5=data['q5'],
-        q6=data['q6']
-    )
-    db.session.add(new_entry)
-    db.session.commit()
-    
-    return jsonify({"message": "Data saved successfully!"}), 200
-
-# View saved data
-@app.route('/view', methods=['GET'])
-def view():
-    entries = CourseExitForm.query.all()
-    results = [
-        {
-            "roll_no": entry.roll_no,
-            "q1": entry.q1,
-            "q2": entry.q2,
-            "q3": entry.q3,
-            "q4": entry.q4,
-            "q5": entry.q5,
-            "q6": entry.q6
-        }
-        for entry in entries
-    ]
-    return jsonify(results)
-
-# Delete data for a given Roll No
-@app.route('/delete/<roll_no>', methods=['DELETE'])
-def delete(roll_no):
-    entry = CourseExitForm.query.filter_by(roll_no=roll_no).first()
-    if entry:
-        db.session.delete(entry)
+    try:
+        db.session.add(new_entry)
         db.session.commit()
-        return jsonify({"message": "Data deleted successfully!"}), 200
-    return jsonify({"message": "Roll No not found!"}), 404
+        return jsonify({"message": "Data saved successfully!"}), 201
+    except:
+        db.session.rollback()
+        return jsonify({"error": "Roll No already exists or invalid data!"}), 400
+
+# Retrieve Data (View)
+@app.route('/view', methods=['GET'])
+def view_data():
+    records = CourseExitForm.query.all()
+    return jsonify([{
+        "roll_no": r.roll_no, "q1": r.q1, "q2": r.q2, "q3": r.q3,
+        "q4": r.q4, "q5": r.q5, "q6": r.q6
+    } for r in records])
+
+@app.route("/upload_csv", methods=["POST"])
+def upload_csv():
+    try:
+        data = request.json
+        for record in data:
+            new_entry = CourseExitForm(**record)
+            db.session.add(new_entry)
+        db.session.commit()
+        return jsonify({"message": "CSV data uploaded successfully!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+# Delete Data
+@app.route('/delete/<string:roll_no>', methods=['DELETE'])
+def delete_data(roll_no):
+    record = CourseExitForm.query.filter_by(roll_no=roll_no).first()
+    if record:
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify({"message": "Record deleted successfully!"})
+    return jsonify({"error": "Roll No not found!"}), 404
 
 
 @app.route('/direct_assesment')

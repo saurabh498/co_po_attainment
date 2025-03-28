@@ -86,16 +86,6 @@
             color: white;
         }
 
-        .view-btn {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-        }
-
         .next-btn {
             background: #ffc107;
             color: black;
@@ -116,11 +106,12 @@
             width: 100%;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 
 <body>
     <div class="container">
-        <h2>Course Exit Form Analysis </h2>
+        <h2>Course Exit Form Analysis</h2>
 
         <table>
             <tr>
@@ -145,7 +136,7 @@
             </tr>
             <tbody>
                 <tr>
-                    <td><input type="text" id="rollNoInput" placeholder="Roll No" readonly></td>
+                    <td><input type="text" id="rollNoInput" placeholder="Enter Roll No"></td>
                     <td><input type="number" min="1" max="5" id="q1"></td>
                     <td><input type="number" min="1" max="5" id="q2"></td>
                     <td><input type="number" min="1" max="5" id="q3"></td>
@@ -157,118 +148,196 @@
         </table>
 
         <div class="buttons">
-            <button class="save-btn" onclick="saveData()">Save</button>
-            <button class="view-btn" onclick="viewData()">View</button>
-            <button class="delete-btn" onclick="deleteData()">Delete</button>
+            <button class="save-btn" onclick="save_course_data()">Save</button>
             <button class="next-btn" onclick="direct_assesment()">Next</button>
         </div>
 
-        <h3>Saved Data</h3>
+        <div class="mb-3">
+            <label for="csvFile" class="form-label">Upload CSV File</label>
+            <input type="file" id="csvFile" class="form-control" accept=".csv">
+            <button id="uploadBtn" class="btn btn-success mt-2" onclick="handleCSVUpload(event)">Upload</button>
+        </div>
+
+        <!-- Table to display uploaded CSV data -->
+        <button id="loadDataBtn" class="btn btn-primary mt-2">Load Data</button>
         <div class="table-container">
-            <table id="savedDataTable">
-                <tr>
-                    <th>Roll No</th>
-                    <th>Q1</th>
-                    <th>Q2</th>
-                    <th>Q3</th>
-                    <th>Q4</th>
-                    <th>Q5</th>
-                    <th>Q6</th>
-                </tr>
+            <table id="savedDataTable" class="table table-bordered mt-4">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Roll No</th>
+                        <th colspan="6">Questions</th>
+                        <th rowspan="2">Action</th>
+                    </tr>
+                    <tr>
+                        <th>CO1</th>
+                        <th>CO2</th>
+                        <th>CO3</th>
+                        <th>CO4</th>
+                        <th>CO5</th>
+                        <th>CO6</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be inserted here -->
+                </tbody>
             </table>
         </div>
+
+
     </div>
+</body>
 
-    <script>
-        function getRollNoFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const rollNo = urlParams.get('roll_no');
-            if (rollNo) {
-                document.getElementById("rollNoInput").value = rollNo;
-            }
+<script>
+
+    document.getElementById("uploadBtn").addEventListener("click", function () {
+        let fileInput = document.getElementById("csvFile");
+        let file = fileInput.files[0];
+
+        if (!file) {
+            alert("Please select a CSV file to upload.");
+            return;
         }
 
-        function saveData() {
-            let rollNo = document.getElementById("rollNoInput").value;
-            if (!rollNo) {
-                alert("No Roll No provided!");
-                return;
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            let csvData = e.target.result.split("\n").map(row => row.split(","));
+            let courseData = [];
+
+            for (let i = 1; i < csvData.length; i++) {
+                let row = csvData[i].map(value => value.trim());
+                if (row.length === 7) {  // Ensure correct data format
+                    let [rollNo, q1, q2, q3, q4, q5, q6] = row;
+                    if (rollNo && q1 && q2 && q3 && q4 && q5 && q6) {
+                        courseData.push({ roll_no: rollNo, q1, q2, q3, q4, q5, q6 });
+                    }
+                }
             }
 
-            let data = {
-                rollNo: rollNo,
-                q1: document.getElementById("q1").value || 0,
-                q2: document.getElementById("q2").value || 0,
-                q3: document.getElementById("q3").value || 0,
-                q4: document.getElementById("q4").value || 0,
-                q5: document.getElementById("q5").value || 0,
-                q6: document.getElementById("q6").value || 0,
-            };
+            // Send data to backend
+            fetch("/upload_csv", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(courseData)
+            })
+                .then(response => response.json())
+                .then(result => {
+                    alert(result.message || "CSV data uploaded successfully!");
+                    loadSavedData();  // Refresh table
+                })
+                .catch(error => console.error("Error uploading CSV:", error));
+        };
 
-            localStorage.setItem(rollNo, JSON.stringify(data));
-            alert("Data saved successfully!");
+        reader.readAsText(file);
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        loadSavedData();
+    });
+
+    // Function to save course data
+    async function save_course_data() {
+        let rollNo = document.getElementById("rollNoInput").value.trim();
+        let q1 = document.getElementById("q1").value;
+        let q2 = document.getElementById("q2").value;
+        let q3 = document.getElementById("q3").value;
+        let q4 = document.getElementById("q4").value;
+        let q5 = document.getElementById("q5").value;
+        let q6 = document.getElementById("q6").value;
+
+        if (!rollNo || !q1 || !q2 || !q3 || !q4 || !q5 || !q6) {
+            alert("Please fill in all fields before saving.");
+            return;
         }
 
-        function viewData() {
-            let table = document.getElementById("savedDataTable");
-            table.innerHTML = `
-                <tr>
-                    <th>Roll No</th>
-                    <th>Q1</th>
-                    <th>Q2</th>
-                    <th>Q3</th>
-                    <th>Q4</th>
-                    <th>Q5</th>
-                    <th>Q6</th>
-                </tr>`;
+        let data = { roll_no: rollNo, q1, q2, q3, q4, q5, q6 };
 
-            for (let i = 0; i < localStorage.length; i++) {
-                let rollNo = localStorage.key(i);
-                let data = JSON.parse(localStorage.getItem(rollNo));
+        try {
+            let response = await fetch("/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
 
-                let row = `<tr>
-                    <td>${data.rollNo}</td>
-                    <td>${data.q1}</td>
-                    <td>${data.q2}</td>
-                    <td>${data.q3}</td>
-                    <td>${data.q4}</td>
-                    <td>${data.q5}</td>
-                    <td>${data.q6}</td>
-                </tr>`;
-
-                table.innerHTML += row;
-            }
+            let result = await response.json();
+            alert(result.message || result.error);
+            loadSavedData();  // Refresh data after saving
+        } catch (error) {
+            console.error("Error:", error);
         }
-
-        function deleteData() {
-            let rollNo = document.getElementById("rollNoInput").value;
-            if (localStorage.getItem(rollNo)) {
-                localStorage.removeItem(rollNo);
-                alert("Data deleted successfully!");
-                viewData();
-            } else {
-                alert("No data found for this Roll No!");
-            }
-        }
-
-        function direct_assesment() {
-    let rollNoInput = document.getElementById("rollNoInput");
-    let rollNo = rollNoInput.value.trim();
-
-    if (/^\d+$/.test(rollNo)) {  // Validate only numeric roll numbers
-        sessionStorage.setItem("selected_roll_no", rollNo);
-        let url = "/direct_assesment?roll_no=" + encodeURIComponent(rollNo);
-        console.log("Redirecting to:", url);
-        window.location.href = url;
-    } else {
-        rollNoInput.style.border = "2px solid red"; // Highlight input field
-        alert("Please enter a valid Roll Number.");
     }
-}
 
-        
-        window.onload = getRollNoFromURL;
-    </script>
+
+    // Function to view saved data
+    document.getElementById("loadDataBtn").addEventListener("click", loadSavedData);
+
+    async function loadSavedData() {
+        let table = document.getElementById("savedDataTable");
+        table.innerHTML = `<tr>
+        <th>Roll No</th>
+        <th>Q1</th>
+        <th>Q2</th>
+        <th>Q3</th>
+        <th>Q4</th>
+        <th>Q5</th>
+        <th>Q6</th>
+        <th>Action</th>
+    </tr>`;
+
+        try {
+            let response = await fetch("/view");
+            let records = await response.json();
+
+            records.forEach(data => {
+                let row = table.insertRow();
+                row.innerHTML = `
+                <td>${data.roll_no}</td>
+                <td>${data.q1}</td>
+                <td>${data.q2}</td>
+                <td>${data.q3}</td>
+                <td>${data.q4}</td>
+                <td>${data.q5}</td>
+                <td>${data.q6}</td>
+                <td><button class="btn btn-danger" onclick="deleteData('${data.roll_no}')">Delete</button></td>
+            `;
+            });
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    }
+
+    // Function to delete all data
+    async function deleteData(rollNo) {
+        if (!confirm("Are you sure you want to delete this record?")) return;
+
+        try {
+            let response = await fetch(`/delete/${rollNo}`, { method: "DELETE" });
+            let result = await response.json();
+            alert(result.message || result.error);
+            loadSavedData(); // Refresh data after deleting
+        } catch (error) {
+            console.error("Error deleting data:", error);
+        }
+    }
+
+
+    // Function to redirect to another page (Modify URL accordingly)
+    function direct_assesment() {
+        window.location.href = "/direct_assesment"; // Corrected spelling
+    }
+    
+    // Function to clear input fields
+    function clearInputs() {
+        document.getElementById("rollNoInput").value = "";
+        document.getElementById("q1").value = "";
+        document.getElementById("q2").value = "";
+        document.getElementById("q3").value = "";
+        document.getElementById("q4").value = "";
+        document.getElementById("q5").value = "";
+        document.getElementById("q6").value = "";
+    }
+
+</script>
+
 </body>
 
 </html>
