@@ -1,5 +1,6 @@
 import datetime
 from sqlite3 import Cursor
+from venv import logger
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CursorResult
@@ -92,16 +93,17 @@ class Student(db.Model):
         }
 
 class StudentMarks(db.Model):
+    __tablename__ = 'student_marks'
+    
     id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, nullable=False, unique=True)  # Added student_id
     avg_unit_test_marks = db.Column(db.Float, default=0.0)
-    external_exam = db.Column(db.Integer, default=0)
-    orals = db.Column(db.Integer, default=0)
-    term_work = db.Column(db.Integer, default=0)
+    external_exam = db.Column(db.Float, default=0.0)
+    orals = db.Column(db.Float, default=0.0)
+    term_work = db.Column(db.Float, default=0.0)
     cgpa = db.Column(db.Float, default=0.0)
-
-    # Relationship with UnitTestMarks and CO_Mapping
-    unit_test_marks = db.relationship('UnitTestMarks', backref='student_marks', cascade="all, delete", lazy=True)
-    co_mapping = db.relationship('CO_Mapping', backref='student_marks', cascade="all, delete", lazy=True)
+    unit_test_marks = db.Column(db.Text, default='[]')  # Store as JSON string
+    co_mapping = db.Column(db.Text, default='[]')
 
 class UnitTestMarks(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -367,63 +369,35 @@ def save_sub_co_po():
         print(f"❌ Error: {e}")  # Debugging
         return jsonify({"message": f"Error: {str(e)}"}), 500
 
+
 @app.route('/view_sub_co_po', methods=['GET'])
-@login_required
 def view_sub_co_po():
     subject = request.args.get('subject')
-
     if not subject:
-        return jsonify({"message": "Subject is required!"}), 400
+        return jsonify({"message": "Subject name required"}), 400
 
-    try:
-        # Fetch data with NULL handling
-        results = db.session.query(
-            SubjectCOPO.co_code,
-            SubjectCOPO.co_text,
-            SubjectCOPO.cognition,
-            SubjectCOPO.po_code,
-            SubjectCOPO.po_text,
-            Mapping.mapping_value,
-            func.coalesce(Mapping.total_hours, 0.0).label("total_hours"),  # ✅ Handle NULL values
-            func.coalesce(Mapping.avg_value, 0.0).label("avg_value")  # ✅ Handle NULL values
-        ).join(
-            Mapping, SubjectCOPO.id == Mapping.subject_copo_id
-        ).filter(
-            SubjectCOPO.user_id == current_user.id,
-            SubjectCOPO.subject_name == subject
-        ).all()
+    # Fetch all SubjectCOPO entries for the subject
+    subject_copos = SubjectCOPO.query.filter_by(subject_name=subject).all()
+    if not subject_copos:
+        return jsonify({"message": "No data found for this subject"}), 404
 
-        if not results:
-            return jsonify([])
+    # Construct response
+    result = []
+    for sc in subject_copos:
+        mappings = Mapping.query.filter_by(subject_copo_id=sc.id).all()
+        for mapping in mappings:
+            result.append({
+                "co_code": sc.co_code,
+                "co_text": sc.co_text,
+                "cognition": sc.cognition,
+                "po_code": sc.po_code,
+                "po_text": sc.po_text,
+                "mapping_value": mapping.mapping_value,
+                "total_hours": mapping.total_hours,
+                "avg_value": mapping.avg_value
+            })
 
-        # Debugging - Print the results
-        print("✅ DEBUGGING RESULTS:")
-        for rec in results:
-            print(rec)
-
-        # Convert results to a list
-        response = [
-            {
-                "co_code": rec.co_code or "N/A",
-                "co_text": rec.co_text or "N/A",
-                "cognition": rec.cognition or "N/A",
-                "po_code": rec.po_code or "N/A",
-                "po_text": rec.po_text or "N/A",
-                "mapping_value": rec.mapping_value or 0.0,
-                "total_hours": rec.total_hours or 0.0,
-                "avg_value": rec.avg_value or 0.0
-            }
-            for rec in results
-        ]
-
-        return jsonify(response)
-
-    except Exception as e:
-        print(f"❌ ERROR in /view_sub_co_po: {e}")  # Debugging
-        return jsonify({"error": str(e)}), 500
-
-
- 
+    return jsonify(result), 200
 
 @app.route("/delete_subject", methods=["DELETE"])
 @login_required
@@ -443,9 +417,6 @@ def delete_subject():
     db.session.commit()
 
     return jsonify({"message": f"Subject '{subject_name}' deleted successfully"}), 200
-
-    
-
 
 @app.route("/logout")
 def logout():
@@ -534,66 +505,109 @@ def delete_student():
 def cgpa_calculation():
     return render_template('cgpa_calculation.html')
 
-@app.route('/calculate_cgpa', methods=['POST'])
-def calculateCgpa():
-    try:
-        # Get form data
-        avg_marks = float(request.form.get('avgMarks', 0))
-        external_marks = float(request.form.get('externalMarks', 0))
-        oral_marks = float(request.form.get('oralMarks', 0))
-        term_work_marks = float(request.form.get('termWorkMarks', 0))
-
-        # Calculate total marks
-        total_marks = avg_marks + external_marks + oral_marks + term_work_marks
-
-        # Normalize CGPA on a 10-point scale
-        cgpa = (total_marks / 150) * 10
-        if cgpa > 10:
-            cgpa = 10
-
-        return jsonify({"cgpa": round(cgpa, 2)})
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
-    
 @app.route('/save_data', methods=['POST'])
 def save_data():
     try:
         data = request.get_json()
-        print("Received data:", data)  # Debugging line to check incoming data
-
+        
+        # Extract required fields
         student_id = data.get('student_id')
         if not student_id:
-            return jsonify({"error": "Missing student_id"}), 400
+            return jsonify({'error': 'Student ID is required'}), 400
 
-        # Insert into student_marks
-        new_student_marks = StudentMarks(
-            avg_unit_test_marks=data.get('avgMarks', 0),
-            external_exam=data.get('external', 0),
-            orals=data.get('oral', 0),
-            term_work=data.get('termWork', 0),
-            cgpa=data.get('cgpa', 0.0)
-        )
-        db.session.add(new_student_marks)
-        db.session.commit()  # Commit to get the ID
+        # Calculate CGPA
+        avg_unit_test_marks = float(data.get('avg_unit_test_marks', 0))
+        external_exam = float(data.get('external_exam', 0))
+        orals = float(data.get('orals', 0))
+        term_work = float(data.get('term_work', 0))
 
-        # Insert CO Mapping if data exists
-        co_mappings = data.get('co_mapping', [])  # Expecting list of mappings
-        for co in co_mappings:
-            new_co_mapping = CO_Mapping(
-                student_marks_id=new_student_marks.id,
-                unit_test_number=co.get('unit_test_number', 1),
-                question_number=co.get('question_number', ""),
-                co_value=co.get('co_value', "")
+        # Validate maximum marks
+        if external_exam > 80:
+            return jsonify({'error': 'External exam marks cannot exceed 80'}), 400
+        if orals > 25:
+            return jsonify({'error': 'Oral marks cannot exceed 25'}), 400
+        if term_work > 25:
+            return jsonify({'error': 'Term work marks cannot exceed 25'}), 400
+        if avg_unit_test_marks > 20:
+            return jsonify({'error': 'Average unit test marks cannot exceed 20'}), 400
+
+        # Calculate total marks and CGPA
+        total_marks = avg_unit_test_marks + external_exam + orals + term_work
+        cgpa = (total_marks / 150) * 10
+        if cgpa > 10:
+            cgpa = 10
+
+        # Check if student record exists
+        student = StudentMarks.query.filter_by(student_id=student_id).first()
+        
+        if student:
+            # Update existing record
+            student.avg_unit_test_marks = avg_unit_test_marks
+            student.external_exam = external_exam
+            student.orals = orals
+            student.term_work = term_work
+            student.cgpa = cgpa
+        else:
+            # Create new record
+            student = StudentMarks(
+                student_id=student_id,
+                avg_unit_test_marks=avg_unit_test_marks,
+                external_exam=external_exam,
+                orals=orals,
+                term_work=term_work,
+                cgpa=cgpa
             )
-            db.session.add(new_co_mapping)
+            db.session.add(student)
+
+        # Handle CO Mapping
+        co_mapping_data = data.get('co_mapping', [])
+        if co_mapping_data:
+            # Delete existing CO mappings for this student
+            CO_Mapping.query.filter_by(student_id=student_id).delete()
+            
+            # Add new CO mappings
+            for co in co_mapping_data:
+                co_entry = CO_Mapping(
+                    student_id=student_id,
+                    unit_test_number=co.get('unit_test_number'),
+                    question_number=co.get('question_number'),
+                    co_value=co.get('co_value', '')
+                )
+                db.session.add(co_entry)
 
         db.session.commit()
-        return jsonify({"message": "Data saved successfully!"}), 201
 
+        # Prepare response data
+        co_mappings = CO_Mapping.query.filter_by(student_id=student_id).all()
+        response_data = {
+            'student_id': student_id,
+            'avg_unit_test_marks': round(avg_unit_test_marks, 2),
+            'external_exam': external_exam,
+            'orals': orals,
+            'term_work': term_work,
+            'cgpa': round(cgpa, 2),
+            'unit_test_marks': data.get('unit_test_marks', []),
+            'co_mapping': [{
+                'unit_test_number': co.unit_test_number,
+                'question_number': co.question_number,
+                'co_value': co.co_value
+            } for co in co_mappings]
+        }
+
+        return jsonify({
+            'message': 'Data saved successfully',
+            'data': response_data
+        }), 200
+
+    except pymysql.IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': 'Student ID already exists'}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
+
+# Route to Load Data
+
 
 @app.route('/course_exit_analysis')
 def course_exit_analysis():
