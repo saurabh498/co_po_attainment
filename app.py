@@ -1,4 +1,7 @@
+import csv
+import json
 import datetime
+from io import StringIO
 from sqlite3 import Cursor
 from venv import logger
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
@@ -11,6 +14,8 @@ from datetime import datetime
 from flask_sqlalchemy import session
 from flask import session, redirect, url_for
 from sqlalchemy.sql import func
+import pandas as pd  # Yeh line zaroori hai
+from flask import request
 import pdfkit
 
 pymysql.install_as_MySQLdb()
@@ -161,6 +166,16 @@ class DirectAssessment(db.Model):
             "total_marks": self.total_marks,
             "grade": self.grade
         }
+
+class StudentPerformance(db.Model):
+    __tablename__ = 'student_performance'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    roll_no = db.Column(db.String(10), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    test_marks = db.Column(db.Float, nullable=False)
+    test_percentage = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(20), nullable=False)  # Bright, Weak, Average
+    observation = db.Column(db.String(255), nullable=False)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -744,6 +759,125 @@ def delete_marks():
 @app.route('/students_analysis')
 def students_analysis():
     return render_template('students_analysis.html')
+
+@app.route('/save_analysis', methods=['POST'])
+def save_analysis():
+    data = request.json  # JSON data from frontend
+
+    try:
+        for student in data:
+            percentage_value = student['percentage'].replace('%', '').strip()  # Remove '%'
+            new_student = StudentPerformance(
+                roll_no=student['roll_no'],
+                name=student['name'],
+                test_marks=float(student['marks']),
+                test_percentage=float(percentage_value),  # Now it's a valid float
+                category=student['category'],
+                observation=student['observation']
+            )
+            db.session.add(new_student)
+        db.session.commit()
+        return jsonify({"message": "Data saved successfully!"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/view_saved_data', methods=['GET'])
+def view_saved_data():
+    try:
+        students = StudentPerformance.query.all()  # Fetch all records
+        student_list = [{
+            "roll_no": student.roll_no,
+            "name": student.name,
+            "marks": student.test_marks,
+            "percentage": student.test_percentage,
+            "category": student.category,
+            "observation": student.observation
+        } for student in students]
+
+        return jsonify(student_list), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route("/update_analysis/<roll_no>", methods=["PATCH"])
+def update_analysis(roll_no):
+    try:
+        data = request.json
+        new_roll_no = data.get("roll_no")  # Match frontend key
+        name = data.get("name")
+        marks = float(data.get("marks"))  # Ensure marks are numeric
+
+        # Check if the new roll number already exists (excluding the current student)
+        existing_student = StudentPerformance.query.filter_by(roll_no=new_roll_no).first()
+        if existing_student and existing_student.roll_no != roll_no:
+            return jsonify({"error": "Roll Number already exists!"}), 400
+
+        # Fetch student from database
+        student = StudentPerformance.query.filter_by(roll_no=roll_no).first()
+        if not student:
+            return jsonify({"error": "Student not found!"}), 404
+
+        # Update values
+        student.roll_no = new_roll_no
+        student.name = name
+        student.test_marks = marks
+
+        # Recalculate Percentage, Category, and Observation
+        max_marks = 20  # Class test total marks
+        student.test_percentage = (marks / max_marks) * 100
+
+        if student.test_percentage >= 75:
+            student.category = "Bright"
+            student.observation = "Excellent Performance"
+        elif student.test_percentage < 40:
+            student.category = "Weak"
+            student.observation = "Needs Improvement"
+        else:
+            student.category = "Average"
+            student.observation = "Can Do Better"
+
+        # Commit changes
+        db.session.commit()
+        return jsonify({
+            "message": "Student data updated successfully!",
+            "student": {
+                "roll_no": student.roll_no,
+                "name": student.name,
+                "marks": student.test_marks,
+                "percentage": student.test_percentage,
+                "category": student.category,
+                "observation": student.observation
+            }
+        }), 200
+
+    except ValueError as e:
+        return jsonify({"error": "Invalid marks value provided!"}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to update student: {str(e)}"}), 500
+
+    
+
+
+@app.route('/delete_analysis/<roll_no>', methods=['DELETE'])
+def delete_analysis(roll_no):
+    student = StudentPerformance.query.filter_by(roll_no=roll_no).first()
+    
+    if not student:
+        return jsonify({"error": "Student not found"}), 404  # Return error if roll number not found
+
+    db.session.delete(student)
+    db.session.commit()
+    
+    return jsonify({"message": f"Record for Roll No. {roll_no} deleted successfully!"})
+
+@app.route('/newfile', methods=['GET'])
+def newfile():
+    try:
+        return render_template('newfile.html')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -320,19 +320,6 @@
             addEventListenersToRow(newRow);
         }
 
-        // Handle the 'Next' button click
-        function students_analysis() {
-            let rollNo = document.querySelector(".roll_no")?.value;
-            let studentName = document.querySelector(".student_name")?.value;
-
-            if (!rollNo || !studentName) {
-                alert("Please enter Roll No and Student Name before proceeding.");
-                return;
-            }
-
-            window.location.href = `students_analysis?roll_no=${encodeURIComponent(rollNo)}&name=${encodeURIComponent(studentName)}`;
-        }
-
         // Placeholder functions (to be implemented later)
         function saveData() {
             let rows = document.querySelectorAll("#marklist tr");
@@ -468,6 +455,10 @@
                     });
             }
         }
+
+        function students_analysis() {
+      window.location.href = "/students_analysis";
+    }
 
     </script>
 
