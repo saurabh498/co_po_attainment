@@ -831,7 +831,7 @@ def update_analysis(roll_no):
             student.category = "Bright"
             student.observation = "Excellent Performance"
         elif student.test_percentage < 40:
-            student.category = "Weak"
+            student.category = "Fail"
             student.observation = "Needs Improvement"
         else:
             student.category = "Average"
