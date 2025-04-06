@@ -122,11 +122,60 @@
             opacity: 0.8;
             transform: scale(1.05);
         }
+
+        .horizontal-table {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .row-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #333;
+        }
+
+        .value {
+            font-size: 16px;
+            color: #000;
+            margin-right: 5px;
+            /* Space between values */
+        }
+
+        .highlight {
+            background-color: #ff4500;
+            /* Orange highlight as in the image */
+            color: white;
+            font-weight: bold;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
 <body>
-
     <div class="container">
         <h2>Direct Assessment Marklist</h2>
         <table>
@@ -144,14 +193,15 @@
                 <tr>
                     <td><input type="text" class="roll_no" placeholder="Enter Roll No" /></td>
                     <td><input type="text" class="student_name" placeholder="Enter Student Name" /></td>
-                    <td><input type="number" class="ext_total" placeholder="Enter External Total" /></td>
-                    <td><input type="number" class="int_total" placeholder="Enter Internal Total" /></td>
-                    <td><input type="text" class="total" placeholder="Total" /></td>
-                    <td><input type="text" class="grade" placeholder="Grade" /></td>
+                    <td><input type="number" class="ext_total" placeholder="Enter External Total" min="0" max="80" />
+                    </td>
+                    <td><input type="number" class="int_total" placeholder="Enter Internal Total" min="0" max="20" />
+                    </td>
+                    <td><input type="text" class="total" placeholder="Total" readonly /></td>
+                    <td><input type="text" class="grade" placeholder="Grade" readonly /></td>
                 </tr>
             </tbody>
         </table>
-
 
         <input type="file" id="csvFile" accept=".csv" />
         <button class="upload-btn" onclick="uploadCSV()">Upload CSV</button>
@@ -162,6 +212,8 @@
             <button class="view-btn" onclick="viewData()">View</button>
             <button class="next-btn" onclick="students_analysis()">Next</button>
         </div>
+
+
 
         <div id="savedData">
             <h3>Saved Data</h3>
@@ -184,8 +236,36 @@
         </div>
     </div>
 
-    <script>
+    <div class="container">
+        <h2>Assessment Summary</h2>
+        <div class="horizontal-table" id="summaryTable">
+            <table border="1" cellspacing="0" cellpadding="8">
+                <tr>
+                    <th>Avg.</th>
+                    <td><input type="text" id="avg1" name="avg1" value="" readonly></td>
+                    <td><input type="text" id="avg2" name="avg2" value="" readonly></td>
+                    <td><input type="text" id="avg3" name="avg3" value="" readonly></td>
+                    <td><input type="text" id="avgGrade" name="grade" value="" readonly></td>
+                </tr>
+                <tr>
+                    <th>Max Marks</th>
+                    <td><input type="text" id="max1" name="max1" value="" readonly></td>
+                    <td><input type="text" id="max2" name="max2" value="" readonly></td>
+                    <td><input type="text" id="max3" name="max3" value="" readonly></td>
+                    <td></td>
+                </tr>
+                <tr style="background-color: rgb(215, 211, 204);">
+                    <th>Percentage</th>
+                    <td><input type="text" id="perc1" name="perc1" value="" readonly></td>
+                    <td><input type="text" id="perc2" name="perc2" value="" readonly></td>
+                    <td><input type="text" id="perc3" name="perc3" value="" readonly></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
 
+    <script>
         function uploadCSV() {
             const fileInput = document.getElementById('csvFile');
             const file = fileInput.files[0];
@@ -206,6 +286,8 @@
             const rows = csvData.split('\n');
             let tableBody = document.getElementById('marklist');
             tableBody.innerHTML = '';
+
+            let totals = [];
 
             for (let i = 1; i < rows.length; i++) { // Skip header row if present
                 const cols = rows[i].split(',').map(col => col.trim());
@@ -228,49 +310,45 @@
                 // Create row with input fields matching the original structure
                 let row = document.createElement('tr');
                 row.innerHTML = `
-            <td><input type="text" class="roll_no" value="${cols[0]}" /></td>
-            <td><input type="text" class="student_name" value="${cols[1]}" readonly /></td>
-            <td><input type="number" class="ext_total" value="${extTotal}" min="0" max="80" /></td>
-            <td><input type="number" class="int_total" value="${intTotal}" min="0" max="20" /></td>
-            <td><input type="text" class="total" value="${total}" readonly /></td>
-            <td><input type="text" class="grade" value="${grade}" readonly /></td>
-        `;
+                    <td><input type="text" class="roll_no" value="${cols[0]}" /></td>
+                    <td><input type="text" class="student_name" value="${cols[1]}" readonly /></td>
+                    <td><input type="number" class="ext_total" value="${extTotal}" min="0" max="80" /></td>
+                    <td><input type="number" class="int_total" value="${intTotal}" min="0" max="20" /></td>
+                    <td><input type="text" class="total" value="${total}" readonly /></td>
+                    <td><input type="text" class="grade" value="${grade}" readonly /></td>
+                `;
 
                 tableBody.appendChild(row);
+                totals.push(total);
                 addEventListenersToRow(row); // Add event listeners to the new row
             }
+
+            // Update summary after parsing CSV
+            updateSummary(totals);
         }
 
         // Function to calculate total and grade for a row
         function calculateTotalAndGrade(row) {
-            // Get the input values
             let extInput = row.querySelector(".ext_total");
             let intInput = row.querySelector(".int_total");
             let totalInput = row.querySelector(".total");
             let gradeInput = row.querySelector(".grade");
 
-            // Parse values, default to 0 if empty or invalid
             let ext = parseInt(extInput.value) || 0;
             let int = parseInt(intInput.value) || 0;
 
-            // Limit the values
             if (ext > 80) {
                 ext = 80;
-                extInput.value = 80; // Update input to reflect limit
+                extInput.value = 80;
             }
             if (int > 20) {
                 int = 20;
-                intInput.value = 20; // Update input to reflect limit
+                intInput.value = 20;
             }
 
-            // Calculate total
             let total = ext + int;
-            if (total > 100) {
-                total = 100; // This won't happen since ext + int max is 100, but added for safety
-            }
             totalInput.value = total;
 
-            // Assign grade based on total marks
             let grade = "";
             if (total >= 90) grade = "A+";
             else if (total >= 80) grade = "A";
@@ -283,7 +361,6 @@
 
         // Add event listeners to all inputs dynamically
         function addEventListenersToRow(row) {
-            // Roll No blur event
             row.querySelector(".roll_no").addEventListener("blur", function () {
                 let rollNo = this.value.trim();
                 if (rollNo) {
@@ -291,12 +368,13 @@
                 }
             });
 
-            // Real-time calculation for ext_total and int_total
             row.querySelector(".ext_total").addEventListener("input", function () {
                 calculateTotalAndGrade(row);
+                updateSummaryFromTable();
             });
             row.querySelector(".int_total").addEventListener("input", function () {
                 calculateTotalAndGrade(row);
+                updateSummaryFromTable();
             });
         }
 
@@ -310,17 +388,113 @@
             let table = document.getElementById("marklist");
             let newRow = table.insertRow();
             newRow.innerHTML = `
-        <td><input type="text" class="roll_no" placeholder="Enter Roll No" /></td>
-        <td><input type="text" class="student_name" placeholder="Enter Student Name"  /></td>
-        <td><input type="number" class="ext_total" placeholder="Enter External Total" min="0" max="80" /></td>
-        <td><input type="number" class="int_total" placeholder="Enter Internal Total" min="0" max="20" /></td>
-        <td><input type="text" class="total" placeholder="Total"  /></td>
-        <td><input type="text" class="grade" placeholder="Grade"  /></td>
-    `;
+                <td><input type="text" class="roll_no" placeholder="Enter Roll No" /></td>
+                <td><input type="text" class="student_name" placeholder="Enter Student Name" /></td>
+                <td><input type="number" class="ext_total" placeholder="Enter External Total" min="0" max="80" /></td>
+                <td><input type="number" class="int_total" placeholder="Enter Internal Total" min="0" max="20" /></td>
+                <td><input type="text" class="total" placeholder="Total" readonly /></td>
+                <td><input type="text" class="grade" placeholder="Grade" readonly /></td>
+            `;
             addEventListenersToRow(newRow);
         }
 
-        // Placeholder functions (to be implemented later)
+        function updateSummaryFromTable() {
+            let rows = document.querySelectorAll("#marklist tr");
+            let totals = [];
+
+            rows.forEach(row => {
+                let total = parseInt(row.querySelector(".total").value) || 0;
+                if (total > 0) totals.push(total);
+            });
+
+            updateSummary(totals);
+        }
+
+        // Function to update summary table
+        function updateSummary(dataFromServer = null) {
+            let rows;
+            if (dataFromServer) {
+                // Use data directly from server
+                rows = dataFromServer.map(entry => ({
+                    ext: parseFloat(entry.total_ext) || 0,
+                    int: parseFloat(entry.total_int) || 0,
+                    total: parseFloat(entry.total_marks) || 0,
+                    grade: entry.grade.trim().toUpperCase()
+                }));
+            } else {
+                // Use DOM table (original)
+                rows = Array.from(document.querySelectorAll("#marklist tr")).map(row => ({
+                    ext: parseFloat(row.querySelector(".ext_total").value) || 0,
+                    int: parseFloat(row.querySelector(".int_total").value) || 0,
+                    total: parseFloat(row.querySelector(".total").value) || 0,
+                    grade: row.querySelector(".grade").value.trim().toUpperCase()
+                }));
+            }
+
+            const validRows = rows.filter(row => row.ext > 0 || row.int > 0);
+            const validStudents = validRows.length;
+
+            if (validStudents === 0) {
+                ["avg1", "avg2", "avg3", "avgGrade", "max1", "max2", "max3", "perc1", "perc2", "perc3"]
+                    .forEach(id => document.getElementById(id).value = "");
+                return;
+            }
+
+            const extSum = validRows.reduce((sum, r) => sum + r.ext, 0);
+            const intSum = validRows.reduce((sum, r) => sum + r.int, 0);
+            const grandSum = validRows.reduce((sum, r) => sum + r.total, 0);
+
+            const avgExt = Math.floor(extSum / validStudents);
+            const avgInt = Math.floor(intSum / validStudents);
+            const avgTotal = (grandSum / validStudents).toFixed(2);
+
+            const maxMarks = { external: 80, internal: 20, total: 100 };
+            const percExt = (Math.floor((extSum / (maxMarks.external * validStudents)) * 100)).toFixed(2) + "%";
+            const percInt = (Math.floor((intSum / (maxMarks.internal * validStudents)) * 100)).toFixed(2) + "%";
+            const percTotal = (Math.floor((grandSum / (maxMarks.total * validStudents)) * 100)).toFixed(2) + "%";
+
+            // Grade counting
+            const gradeCount = {};
+            validRows.forEach(row => {
+                if (row.grade) {
+                    gradeCount[row.grade] = (gradeCount[row.grade] || 0) + 1;
+                }
+            });
+            const mostCommonGrade = Object.keys(gradeCount).reduce((a, b) => gradeCount[a] > gradeCount[b] ? a : b, "N/A") + " Grade";
+
+            // Update UI
+            document.getElementById("avg1").value = avgExt;
+            document.getElementById("avg2").value = avgInt;
+            document.getElementById("avg3").value = avgTotal;
+            document.getElementById("avgGrade").value = mostCommonGrade;
+            document.getElementById("max1").value = maxMarks.external;
+            document.getElementById("max2").value = maxMarks.internal;
+            document.getElementById("max3").value = maxMarks.total;
+            document.getElementById("perc1").value = percExt;
+            document.getElementById("perc2").value = percInt;
+            document.getElementById("perc3").value = percTotal;
+        }
+
+
+        // Function to get the most common grade
+        function getMostCommonGrade() {
+            let gradeCount = {};
+            let rows = document.querySelectorAll("#marklist tr");
+            rows.forEach(row => {
+                let grade = row.querySelector(".grade").value.trim();
+                if (grade) {
+                    gradeCount[grade] = (gradeCount[grade] || 0) + 1;
+                }
+            });
+
+            let mostCommonGrade = Object.keys(gradeCount).reduce((a, b) =>
+                gradeCount[a] > gradeCount[b] ? a : b,
+                Object.keys(gradeCount)[0] || "N/A"
+            );
+            return mostCommonGrade || "N/A";
+        }
+
+        // Placeholder functions
         function saveData() {
             let rows = document.querySelectorAll("#marklist tr");
             let data = [];
@@ -330,18 +504,15 @@
                 let studentName = row.querySelector(".student_name").value.trim();
                 let totalExt = parseInt(row.querySelector(".ext_total").value) || 0;
                 let totalInt = parseInt(row.querySelector(".int_total").value) || 0;
-                let grade = row.querySelector(".grade").value.trim();  // Grade is manually entered
+                let grade = row.querySelector(".grade").value.trim();
 
-                // Calculate Total Marks (Total = Ext + Int)
                 let totalMarks = totalExt + totalInt;
 
-                // Validation: Roll No and Student Name are required
                 if (!rollNo || !studentName) {
                     alert("Please fill in Roll No and Student Name for all rows.");
                     return;
                 }
 
-                // Validation: Ensure external marks are within 0-80 and internal marks within 0-20
                 if (totalExt < 0 || totalExt > 80) {
                     alert(`Invalid External Marks for Roll No ${rollNo}. Must be between 0 and 80.`);
                     return;
@@ -357,17 +528,15 @@
                     total_ext: totalExt,
                     total_int: totalInt,
                     total_marks: totalMarks,
-                    grade: grade  // Grade is entered manually, no auto-calculation
+                    grade: grade
                 });
             });
 
-            // If no valid data, exit
             if (data.length === 0) {
                 alert("No data to save.");
                 return;
             }
 
-            // Send data to backend
             fetch('/save_marks', {
                 method: 'POST',
                 headers: {
@@ -375,17 +544,69 @@
                 },
                 body: JSON.stringify(data)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(result => {
                     if (result.message === "Data saved successfully") {
-                        alert("Data saved successfully!");
+                        alert("Student data saved successfully!");
+                        updateSummaryFromTable();
+                        saveSummary(); // Save summary after student data is saved
                     } else {
                         alert("Error saving data: " + result.message);
                     }
                 })
                 .catch(error => {
                     console.error("Error saving data:", error);
-                    alert("An error occurred while saving data.");
+                    alert("An error occurred while saving student data: " + error.message);
+                });
+        }
+
+        function saveSummary() {
+            const avg = parseFloat(document.getElementById("avg3").value) || 0;  // avg3 = overall average
+            const maxExt = parseInt(document.getElementById("max1").value) || 80; // max1 = external max
+            const maxInt = parseInt(document.getElementById("max2").value) || 20; // max2 = internal max
+            const percentageStr = document.getElementById("perc3").value || "0%"; // perc3 = overall %
+            const percentage = parseFloat(percentageStr.replace('%', '')) || 0;
+            const grade = document.getElementById("avgGrade").value || "F";
+
+            const summaryData = {
+                average_marks: avg,
+                max_ext_marks: maxExt,
+                max_int_marks: maxInt,
+                overall_percentage: percentage,
+                most_common_grade: grade,
+                timestamp: new Date().toISOString()
+            };
+
+            fetch('/save_summary', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(summaryData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    if (result.message === "Summary saved successfully") {
+                        console.log("Summary saved successfully!");
+                        alert("Summary saved successfully!");
+                    } else {
+                        console.error("Error saving summary: ", result.message);
+                        alert("Error saving summary: " + result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error saving summary: ", error);
+                    alert("An error occurred while saving summary: " + error.message);
                 });
         }
 
@@ -395,7 +616,7 @@
                 .then(response => response.json())
                 .then(data => {
                     let tbody = document.getElementById("savedDataBody");
-                    tbody.innerHTML = ""; // Clear previous data
+                    tbody.innerHTML = "";
 
                     if (data.length === 0) {
                         tbody.innerHTML = "<tr><td colspan='6'>No data available</td></tr>";
@@ -416,12 +637,15 @@
                 `;
                         tbody.innerHTML += row;
                     });
+
+                    updateSummary(data); // ✅ Pass data to new updateSummary
                 })
                 .catch(error => {
                     console.error("Error fetching data:", error);
                     alert("An error occurred while fetching data.");
                 });
         }
+
 
         function deleteRow(rollNo) {
             if (confirm(`Are you sure you want to delete the record for Roll No ${rollNo}?`)) {
@@ -430,13 +654,12 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ roll_nos: [rollNo] }) // Single Roll No in array
+                    body: JSON.stringify({ roll_nos: [rollNo] })
                 })
                     .then(response => response.json())
                     .then(result => {
                         if (result.message === "Data deleted successfully") {
                             alert(`Record for Roll No ${rollNo} deleted successfully!`);
-                            // Remove the row from marklist table if it exists
                             let rows = document.querySelectorAll("#marklist tr");
                             rows.forEach(row => {
                                 let rollInput = row.querySelector(".roll_no");
@@ -445,6 +668,7 @@
                                 }
                             });
                             viewData(); // Refresh the Saved Data table
+                            updateSummaryFromTable(); // Update summary after delete
                         } else {
                             alert("Error deleting data: " + result.message);
                         }
@@ -457,12 +681,16 @@
         }
 
         function students_analysis() {
-      window.location.href = "/students_analysis";
-    }
+            window.location.href = "/students_analysis";
+        }
 
+        // Placeholder for fetchStudentName (to be implemented if needed)
+        function fetchStudentName(rollNo, row) {
+            // Implement this function to fetch student name based on roll number
+            console.log(`Fetching name for Roll No: ${rollNo}`);
+            row.querySelector(".student_name").value = `Student_${rollNo}`; // Example
+        }
     </script>
-
-
 </body>
 
 </html>

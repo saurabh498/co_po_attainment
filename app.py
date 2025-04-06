@@ -167,6 +167,28 @@ class DirectAssessment(db.Model):
             "grade": self.grade
         }
 
+class AssessmentSummary(db.Model):
+    __tablename__ = "assessment_summary"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    average_marks = db.Column(db.Float, nullable=False)
+    max_ext_marks = db.Column(db.Integer, nullable=False)
+    max_int_marks = db.Column(db.Integer, nullable=False)
+    overall_percentage = db.Column(db.Float, nullable=False)
+    most_common_grade = db.Column(db.String(5), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.now())  # Auto-set current time
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "average_marks": self.average_marks,
+            "max_ext_marks": self.max_ext_marks,
+            "max_int_marks": self.max_int_marks,
+            "overall_percentage": self.overall_percentage,
+            "most_common_grade": self.most_common_grade,
+            "timestamp": self.timestamp.isoformat()
+        }
+
 class StudentPerformance(db.Model):
     __tablename__ = 'student_performance'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -724,6 +746,49 @@ def save_marks():
     except Exception as e:
         db.session.rollback()  # Rollback any failed transactions
         return jsonify({"message": f"Error saving data: {str(e)}"}), 500
+    
+@app.route('/save_summary', methods=['POST'])
+def save_summary():
+    try:
+        data = request.get_json()
+        if not data or not all(k in data for k in ["average_marks", "max_ext_marks", "max_int_marks", "overall_percentage", "most_common_grade"]):
+            return jsonify({"message": "Invalid summary data format"}), 400
+
+        try:
+            average_marks = float(data['average_marks'])
+            max_ext_marks = int(data['max_ext_marks'])
+            max_int_marks = int(data['max_int_marks'])
+            overall_percentage = float(data['overall_percentage'])
+        except ValueError:
+            return jsonify({"message": "Invalid number format in summary data"}), 400
+
+        if not (0 <= max_ext_marks <= 80) or not (0 <= max_int_marks <= 20):
+            return jsonify({"message": "Invalid max marks range. Ext (0-80), Int (0-20)."}), 400
+
+        # Check if a summary already exists (optional: update or create new)
+        existing_summary = AssessmentSummary.query.first()  # You can modify this logic (e.g., by timestamp)
+        if existing_summary:
+            existing_summary.average_marks = average_marks
+            existing_summary.max_ext_marks = max_ext_marks
+            existing_summary.max_int_marks = max_int_marks
+            existing_summary.overall_percentage = overall_percentage
+            existing_summary.most_common_grade = data['most_common_grade']
+        else:
+            new_summary = AssessmentSummary(
+                average_marks=average_marks,
+                max_ext_marks=max_ext_marks,
+                max_int_marks=max_int_marks,
+                overall_percentage=overall_percentage,
+                most_common_grade=data['most_common_grade']
+            )
+            db.session.add(new_summary)
+
+        db.session.commit()
+        return jsonify({"message": "Summary saved successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error saving summary: {str(e)}"}), 500    
 
 @app.route('/get_all_marks', methods=['GET'])
 def get_all_marks():
