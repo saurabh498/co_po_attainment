@@ -145,6 +145,50 @@ class CourseExitForm(db.Model):
         self.q5 = q5
         self.q6 = q6
 
+class CourseAnalysis(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    analysis_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    avg_co1 = db.Column(db.Float, nullable=False)
+    avg_co2 = db.Column(db.Float, nullable=False)
+    avg_co3 = db.Column(db.Float, nullable=False)
+    avg_co4 = db.Column(db.Float, nullable=False)
+    avg_co5 = db.Column(db.Float, nullable=False)
+    avg_co6 = db.Column(db.Float, nullable=False)
+    max_co1 = db.Column(db.Integer, nullable=False)  # New column for Max
+    max_co2 = db.Column(db.Integer, nullable=False)  # New column for Max
+    max_co3 = db.Column(db.Integer, nullable=False)  # New column for Max
+    max_co4 = db.Column(db.Integer, nullable=False)  # New column for Max
+    max_co5 = db.Column(db.Integer, nullable=False)  # New column for Max
+    max_co6 = db.Column(db.Integer, nullable=False)  # New column for Max
+    wt_avg_co1 = db.Column(db.Float, nullable=False)
+    wt_avg_co2 = db.Column(db.Float, nullable=False)
+    wt_avg_co3 = db.Column(db.Float, nullable=False)
+    wt_avg_co4 = db.Column(db.Float, nullable=False)
+    wt_avg_co5 = db.Column(db.Float, nullable=False)
+    wt_avg_co6 = db.Column(db.Float, nullable=False)
+
+    def __init__(self, avg_co1, avg_co2, avg_co3, avg_co4, avg_co5, avg_co6,
+                 max_co1, max_co2, max_co3, max_co4, max_co5, max_co6,
+                 wt_avg_co1, wt_avg_co2, wt_avg_co3, wt_avg_co4, wt_avg_co5, wt_avg_co6):
+        self.avg_co1 = avg_co1
+        self.avg_co2 = avg_co2
+        self.avg_co3 = avg_co3
+        self.avg_co4 = avg_co4
+        self.avg_co5 = avg_co5
+        self.avg_co6 = avg_co6
+        self.max_co1 = max_co1
+        self.max_co2 = max_co2
+        self.max_co3 = max_co3
+        self.max_co4 = max_co4
+        self.max_co5 = max_co5
+        self.max_co6 = max_co6
+        self.wt_avg_co1 = wt_avg_co1
+        self.wt_avg_co2 = wt_avg_co2
+        self.wt_avg_co3 = wt_avg_co3
+        self.wt_avg_co4 = wt_avg_co4
+        self.wt_avg_co5 = wt_avg_co5
+        self.wt_avg_co6 = wt_avg_co6   
+
 class DirectAssessment(db.Model):
     __tablename__ = "direct_assessment"
 
@@ -612,74 +656,119 @@ def load_data():
             for co in co_mapping
         ]
     })
-    roll_no = request.args.get('roll_no')
-    if not roll_no:
-        return jsonify({"error": "No roll number provided"}), 400
-    
-    unit_test_marks = UnitTestMarks.query.filter_by(roll_no=roll_no).all()
-    co_mapping = CO_Mapping.query.filter_by(roll_no=roll_no).all()
-    student_data = StudentMarks.query.filter_by(roll_no=roll_no).first()
-    
-    if not student_data:
-        return jsonify({"message": "No data found"})
-    
-    return jsonify({
-        "external_exam": student_data.external_exam,
-        "orals": student_data.orals,
-        "term_work": student_data.term_work,
-        "avg_unit_test_marks": student_data.avg_unit_test_marks,
-        "cgpa": student_data.cgpa,
-        "unit_test_marks": [{
-            "unit_test_number": utm.unit_test_number,
-            "question_number": utm.question_number,
-            "marks": utm.marks
-        } for utm in unit_test_marks],
-        "co_mapping": [{
-            "unit_test_number": co.unit_test_number,
-            "question_number": co.question_number,
-            "co_value": co.co_value
-        } for co in co_mapping]
-    })
 
 @app.route('/course_exit_analysis')
 def course_exit_analysis():
-    return render_template('course_exit_analysis.html')
+    return render_template('course_exit_analysis.html')  # Your new HTML file
 
-# Save Data (Insert into DB)
+# Upload CSV (validate and return data for display, no saving yet)
+@app.route('/upload_csv', methods=['POST'])
+def upload_csv():
+    try:
+        data = request.get_json()
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid or empty CSV data'}), 400
+        
+        # Validate each record
+        for record in data:
+            if not all(key in record for key in ['roll_no', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6']):
+                return jsonify({'error': 'Missing required fields in CSV data'}), 400
+            if not all(isinstance(record[f'q{i}'], (int, str)) and 1 <= int(record[f'q{i}']) <= 5 for i in range(1, 7)):
+                return jsonify({'error': 'Question values must be between 1 and 5'}), 400
+        
+        return jsonify({'message': 'CSV data validated successfully', 'data': data}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Save Data (manual entry or bulk CSV data)
 @app.route('/save', methods=['POST'])
 def save_data():
-    data = request.json
-    new_entry = CourseExitForm(**data)
-    
-    try:
-        db.session.add(new_entry)
-        db.session.commit()
-        return jsonify({"message": "Data saved successfully!"}), 201
-    except:
-        db.session.rollback()
-        return jsonify({"error": "Roll No already exists or invalid data!"}), 400
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
 
-# Retrieve Data (View)
+    try:
+        entries = data if isinstance(data, list) else [data]
+        for entry in entries:
+            # Check if roll_no already exists
+            existing = CourseExitForm.query.filter_by(roll_no=entry['roll_no']).first()
+            if existing:
+                # Update existing record
+                existing.q1 = entry['q1']
+                existing.q2 = entry['q2']
+                existing.q3 = entry['q3']
+                existing.q4 = entry['q4']
+                existing.q5 = entry['q5']
+                existing.q6 = entry['q6']
+            else:
+                # Insert new record
+                new_entry = CourseExitForm(**entry)
+                db.session.add(new_entry)
+        
+        db.session.commit()
+        return jsonify({'message': 'Course data saved successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to save data: {str(e)}'}), 500
+
+# Save Analysis Data
+@app.route('/save_analysis', methods=['POST'])
+def save_analysis():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No analysis data provided'}), 400
+
+    try:
+        new_analysis = CourseAnalysis(
+            avg_co1=data['avg_co1'],
+            avg_co2=data['avg_co2'],
+            avg_co3=data['avg_co3'],
+            avg_co4=data['avg_co4'],
+            avg_co5=data['avg_co5'],
+            avg_co6=data['avg_co6'],
+            max_co1=data.get('max_co1', 5),  # Default to 5 if not provided
+            max_co2=data.get('max_co2', 5),
+            max_co3=data.get('max_co3', 5),
+            max_co4=data.get('max_co4', 5),
+            max_co5=data.get('max_co5', 5),
+            max_co6=data.get('max_co6', 5),
+            wt_avg_co1=data['wt_avg_co1'],
+            wt_avg_co2=data['wt_avg_co2'],
+            wt_avg_co3=data['wt_avg_co3'],
+            wt_avg_co4=data['wt_avg_co4'],
+            wt_avg_co5=data['wt_avg_co5'],
+            wt_avg_co6=data['wt_avg_co6']
+        )
+        db.session.add(new_analysis)
+        db.session.commit()
+        return jsonify({'message': 'Analysis data saved successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to save analysis: {str(e)}'}), 500
+
+# View Saved Course Data
 @app.route('/view', methods=['GET'])
 def view_data():
     records = CourseExitForm.query.all()
     return jsonify([{
-        "roll_no": r.roll_no, "q1": r.q1, "q2": r.q2, "q3": r.q3,
-        "q4": r.q4, "q5": r.q5, "q6": r.q6
+        'roll_no': r.roll_no, 'q1': r.q1, 'q2': r.q2, 'q3': r.q3,
+        'q4': r.q4, 'q5': r.q5, 'q6': r.q6
     } for r in records])
 
-@app.route("/upload_csv", methods=["POST"])
-def upload_csv():
-    try:
-        data = request.json
-        for record in data:
-            new_entry = CourseExitForm(**record)
-            db.session.add(new_entry)
-        db.session.commit()
-        return jsonify({"message": "CSV data uploaded successfully!"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
+# View Saved Analysis Data (optional, if you want to display historical analysis)
+@app.route('/view_analysis', methods=['GET'])
+def view_analysis():
+    records = CourseAnalysis.query.all()
+    return jsonify([{
+        'analysis_date': r.analysis_date.isoformat(),
+        'avg_co1': r.avg_co1, 'avg_co2': r.avg_co2, 'avg_co3': r.avg_co3,
+        'avg_co4': r.avg_co4, 'avg_co5': r.avg_co5, 'avg_co6': r.avg_co6,
+        'max_co1': r.max_co1, 'max_co2': r.max_co2, 'max_co3': r.max_co3,
+        'max_co4': r.max_co4, 'max_co5': r.max_co5, 'max_co6': r.max_co6,
+        'wt_avg_co1': r.wt_avg_co1, 'wt_avg_co2': r.wt_avg_co2, 'wt_avg_co3': r.wt_avg_co3,
+        'wt_avg_co4': r.wt_avg_co4, 'wt_avg_co5': r.wt_avg_co5, 'wt_avg_co6': r.wt_avg_co6
+    } for r in records])
+
 # Delete Data
 @app.route('/delete/<string:roll_no>', methods=['DELETE'])
 def delete_data(roll_no):
@@ -687,8 +776,8 @@ def delete_data(roll_no):
     if record:
         db.session.delete(record)
         db.session.commit()
-        return jsonify({"message": "Record deleted successfully!"})
-    return jsonify({"error": "Roll No not found!"}), 404
+        return jsonify({'message': 'Record deleted successfully'})
+    return jsonify({'error': 'Roll No not found'}), 404
 
 
 @app.route('/direct_assesment')
@@ -825,8 +914,8 @@ def delete_marks():
 def students_analysis():
     return render_template('students_analysis.html')
 
-@app.route('/save_analysis', methods=['POST'])
-def save_analysis():
+@app.route('/save_data_analysis', methods=['POST'])
+def save__data_analysis():
     data = request.json  # JSON data from frontend
 
     try:

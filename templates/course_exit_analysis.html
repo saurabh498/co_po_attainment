@@ -113,7 +113,7 @@
     <div class="container">
         <h2>Course Exit Form Analysis</h2>
 
-        <table>
+        <table id="inputTable">
             <tr>
                 <th rowspan="3">Roll No</th>
                 <th colspan="6">Questions</th>
@@ -134,7 +134,7 @@
                 <th>CO5</th>
                 <th>CO6</th>
             </tr>
-            <tbody>
+            <tbody id="inputTableBody">
                 <tr>
                     <td><input type="text" id="rollNoInput" placeholder="Enter Roll No"></td>
                     <td><input type="number" min="1" max="5" id="q1"></td>
@@ -155,11 +155,10 @@
         <div class="mb-3">
             <label for="csvFile" class="form-label">Upload CSV File</label>
             <input type="file" id="csvFile" class="form-control" accept=".csv">
-            <button id="uploadBtn" class="btn btn-success mt-2" onclick="handleCSVUpload(event)">Upload</button>
+            <button id="uploadBtn" class="btn btn-success mt-2" onclick="handleCSVUpload()">Upload</button>
         </div>
 
-        <!-- Table to display uploaded CSV data -->
-        <button id="loadDataBtn" class="btn btn-primary mt-2">Load Data</button>
+        <button id="loadDataBtn" class="btn btn-primary mt-2" onclick="loadSavedData()">Load Data</button>
         <div class="table-container">
             <table id="savedDataTable" class="table table-bordered mt-4">
                 <thead>
@@ -183,13 +182,59 @@
             </table>
         </div>
 
-
+        <div class="table-container">
+            <table id="analysisTable" class="table table-bordered mt-4">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>CO1</th>
+                        <th>CO2</th>
+                        <th>CO3</th>
+                        <th>CO4</th>
+                        <th>CO5</th>
+                        <th>CO6</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Avg.</td>
+                        <td id="avgCO1">-</td>
+                        <td id="avgCO2">-</td>
+                        <td id="avgCO3">-</td>
+                        <td id="avgCO4">-</td>
+                        <td id="avgCO5">-</td>
+                        <td id="avgCO6">-</td>
+                    </tr>
+                    <tr>
+                        <td>Max.</td>
+                        <td id="MaxCO1">5</td>
+                        <td id="MaxCO2">5</td>
+                        <td id="MaxCO3">5</td>
+                        <td id="MaxCO4">5</td>
+                        <td id="MaxCO5">5</td>
+                        <td id="MaxCO6">5</td>
+                    </tr>
+                    <tr>
+                        <td>Wt.Avg Max Percentage</td>
+                        <td id="wtAvgCO1">-</td>
+                        <td id="wtAvgCO2">-</td>
+                        <td id="wtAvgCO3">-</td>
+                        <td id="wtAvgCO4">-</td>
+                        <td id="wtAvgCO5">-</td>
+                        <td id="wtAvgCO6">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 
 <script>
+    let tempData = []; // Temporary storage for uploaded data
 
-    document.getElementById("uploadBtn").addEventListener("click", function () {
+    // Handle CSV Upload
+    // Handle CSV Upload
+    function handleCSVUpload() {
         let fileInput = document.getElementById("csvFile");
         let file = fileInput.files[0];
 
@@ -201,87 +246,111 @@
         let reader = new FileReader();
         reader.onload = function (e) {
             let csvData = e.target.result.split("\n").map(row => row.split(","));
-            let courseData = [];
+            tempData = [];
 
             for (let i = 1; i < csvData.length; i++) {
                 let row = csvData[i].map(value => value.trim());
-                if (row.length === 7) {  // Ensure correct data format
+                if (row.length === 7) {
                     let [rollNo, q1, q2, q3, q4, q5, q6] = row;
                     if (rollNo && q1 && q2 && q3 && q4 && q5 && q6) {
-                        courseData.push({ roll_no: rollNo, q1, q2, q3, q4, q5, q6 });
+                        tempData.push({ roll_no: rollNo, q1, q2, q3, q4, q5, q6 });
                     }
                 }
             }
 
-            // Send data to backend
-            fetch("/upload_csv", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(courseData)
-            })
-                .then(response => response.json())
-                .then(result => {
-                    alert(result.message || "CSV data uploaded successfully!");
-                    loadSavedData();  // Refresh table
-                })
-                .catch(error => console.error("Error uploading CSV:", error));
+            displayTempData();
+            updateAnalysisTable(tempData);
         };
 
         reader.readAsText(file);
-    });
+    }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        loadSavedData();
-    });
+    // Display temporary data in the first table
+    function displayTempData() {
+        let tbody = document.getElementById("inputTableBody");
+        tbody.innerHTML = ""; // Clear existing rows
 
-    // Function to save course data
+        tempData.forEach(data => {
+            let row = tbody.insertRow();
+            row.innerHTML = `
+                <td><input type="text" value="${data.roll_no}" readonly></td>
+                <td><input type="number" value="${data.q1}" readonly></td>
+                <td><input type="number" value="${data.q2}" readonly></td>
+                <td><input type="number" value="${data.q3}" readonly></td>
+                <td><input type="number" value="${data.q4}" readonly></td>
+                <td><input type="number" value="${data.q5}" readonly></td>
+                <td><input type="number" value="${data.q6}" readonly></td>
+            `;
+        });
+    }
+
+    // Save course data (manual entry or uploaded CSV)
     async function save_course_data() {
-        let rollNo = document.getElementById("rollNoInput").value.trim();
-        let q1 = document.getElementById("q1").value;
-        let q2 = document.getElementById("q2").value;
-        let q3 = document.getElementById("q3").value;
-        let q4 = document.getElementById("q4").value;
-        let q5 = document.getElementById("q5").value;
-        let q6 = document.getElementById("q6").value;
+        let dataToSave = [];
 
-        if (!rollNo || !q1 || !q2 || !q3 || !q4 || !q5 || !q6) {
-            alert("Please fill in all fields before saving.");
-            return;
+        if (tempData.length > 0) {
+            dataToSave = tempData; // Use uploaded CSV data
+        } else {
+            let rollNo = document.getElementById("rollNoInput").value.trim();
+            let q1 = document.getElementById("q1").value;
+            let q2 = document.getElementById("q2").value;
+            let q3 = document.getElementById("q3").value;
+            let q4 = document.getElementById("q4").value;
+            let q5 = document.getElementById("q5").value;
+            let q6 = document.getElementById("q6").value;
+
+            if (!rollNo || !q1 || !q2 || !q3 || !q4 || !q5 || !q6) {
+                alert("Please fill in all fields before saving.");
+                return;
+            }
+
+            dataToSave.push({ roll_no: rollNo, q1, q2, q3, q4, q5, q6 });
         }
 
-        let data = { roll_no: rollNo, q1, q2, q3, q4, q5, q6 };
-
         try {
+            // Save course data
             let response = await fetch("/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
+                body: JSON.stringify(dataToSave)
+            });
+            let result = await response.json();
+
+            // Save analysis data
+            let analysisData = calculateAnalysis(dataToSave);
+            await fetch('/save_analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(analysisData)
             });
 
-            let result = await response.json();
-            alert(result.message || result.error);
-            loadSavedData();  // Refresh data after saving
+            alert(result.message || "Data saved successfully!");
+            tempData = []; // Clear temporary data
+            clearInputs();
+            loadSavedData(); // Refresh saved data table
         } catch (error) {
             console.error("Error:", error);
         }
     }
 
-
-    // Function to view saved data
-    document.getElementById("loadDataBtn").addEventListener("click", loadSavedData);
-
+    // Load saved data
     async function loadSavedData() {
         let table = document.getElementById("savedDataTable");
-        table.innerHTML = `<tr>
-        <th>Roll No</th>
-        <th>Q1</th>
-        <th>Q2</th>
-        <th>Q3</th>
-        <th>Q4</th>
-        <th>Q5</th>
-        <th>Q6</th>
-        <th>Action</th>
-    </tr>`;
+        table.innerHTML = `
+            <tr>
+                <th rowspan="2">Roll No</th>
+                <th colspan="6">Questions</th>
+                <th rowspan="2">Action</th>
+            </tr>
+            <tr>
+                <th>CO1</th>
+                <th>CO2</th>
+                <th>CO3</th>
+                <th>CO4</th>
+                <th>CO5</th>
+                <th>CO6</th>
+            </tr>
+        `;
 
         try {
             let response = await fetch("/view");
@@ -290,22 +359,80 @@
             records.forEach(data => {
                 let row = table.insertRow();
                 row.innerHTML = `
-                <td>${data.roll_no}</td>
-                <td>${data.q1}</td>
-                <td>${data.q2}</td>
-                <td>${data.q3}</td>
-                <td>${data.q4}</td>
-                <td>${data.q5}</td>
-                <td>${data.q6}</td>
-                <td><button class="btn btn-danger" onclick="deleteData('${data.roll_no}')">Delete</button></td>
-            `;
+                    <td>${data.roll_no}</td>
+                    <td>${data.q1}</td>
+                    <td>${data.q2}</td>
+                    <td>${data.q3}</td>
+                    <td>${data.q4}</td>
+                    <td>${data.q5}</td>
+                    <td>${data.q6}</td>
+                    <td><button class="btn btn-danger" onclick="deleteData('${data.roll_no}')">Delete</button></td>
+                `;
             });
+
+            updateAnalysisTable(records);
         } catch (error) {
             console.error("Error fetching data:", error);
         }
     }
 
-    // Function to delete all data
+    // Update analysis table
+    function updateAnalysisTable(data) {
+        let analysisData = calculateAnalysis(data);
+
+        document.getElementById("avgCO1").textContent = analysisData.avg_co1.toFixed(2) || "-";
+        document.getElementById("avgCO2").textContent = analysisData.avg_co2.toFixed(2) || "-";
+        document.getElementById("avgCO3").textContent = analysisData.avg_co3.toFixed(2) || "-";
+        document.getElementById("avgCO4").textContent = analysisData.avg_co4.toFixed(2) || "-";
+        document.getElementById("avgCO5").textContent = analysisData.avg_co5.toFixed(2) || "-";
+        document.getElementById("avgCO6").textContent = analysisData.avg_co6.toFixed(2) || "-";
+        document.getElementById("wtAvgCO1").textContent = analysisData.wt_avg_co1.toFixed(2) || "-";
+        document.getElementById("wtAvgCO2").textContent = analysisData.wt_avg_co2.toFixed(2) || "-";
+        document.getElementById("wtAvgCO3").textContent = analysisData.wt_avg_co3.toFixed(2) || "-";
+        document.getElementById("wtAvgCO4").textContent = analysisData.wt_avg_co4.toFixed(2) || "-";
+        document.getElementById("wtAvgCO5").textContent = analysisData.wt_avg_co5.toFixed(2) || "-";
+        document.getElementById("wtAvgCO6").textContent = analysisData.wt_avg_co6.toFixed(2) || "-";
+    }
+
+    // Calculate analysis metrics
+    function calculateAnalysis(records) {
+        if (!records || records.length === 0) {
+            return {
+                avg_co1: 0, avg_co2: 0, avg_co3: 0, avg_co4: 0, avg_co5: 0, avg_co6: 0,
+                wt_avg_co1: 0, wt_avg_co2: 0, wt_avg_co3: 0, wt_avg_co4: 0, wt_avg_co5: 0, wt_avg_co6: 0
+            };
+        }
+
+        let totals = { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0 };
+        records.forEach(data => {
+            totals.q1 += parseInt(data.q1);
+            totals.q2 += parseInt(data.q2);
+            totals.q3 += parseInt(data.q3);
+            totals.q4 += parseInt(data.q4);
+            totals.q5 += parseInt(data.q5);
+            totals.q6 += parseInt(data.q6);
+        });
+
+        let count = records.length;
+        let maxScorePerCO = 5;
+
+        return {
+            avg_co1: totals.q1 / count,
+            avg_co2: totals.q2 / count,
+            avg_co3: totals.q3 / count,
+            avg_co4: totals.q4 / count,
+            avg_co5: totals.q5 / count,
+            avg_co6: totals.q6 / count,
+            wt_avg_co1: (totals.q1 / (count * maxScorePerCO)) * 100,
+            wt_avg_co2: (totals.q2 / (count * maxScorePerCO)) * 100,
+            wt_avg_co3: (totals.q3 / (count * maxScorePerCO)) * 100,
+            wt_avg_co4: (totals.q4 / (count * maxScorePerCO)) * 100,
+            wt_avg_co5: (totals.q5 / (count * maxScorePerCO)) * 100,
+            wt_avg_co6: (totals.q6 / (count * maxScorePerCO)) * 100
+        };
+    }
+
+    // Delete data
     async function deleteData(rollNo) {
         if (!confirm("Are you sure you want to delete this record?")) return;
 
@@ -319,13 +446,12 @@
         }
     }
 
-
-    // Function to redirect to another page (Modify URL accordingly)
+    // Redirect to another page
     function direct_assesment() {
-        window.location.href = "/direct_assesment"; // Corrected spelling
+        window.location.href = "/direct_assesment";
     }
-    
-    // Function to clear input fields
+
+    // Clear input fields
     function clearInputs() {
         document.getElementById("rollNoInput").value = "";
         document.getElementById("q1").value = "";
@@ -334,10 +460,22 @@
         document.getElementById("q4").value = "";
         document.getElementById("q5").value = "";
         document.getElementById("q6").value = "";
+        document.getElementById("inputTableBody").innerHTML = `
+            <tr>
+                <td><input type="text" id="rollNoInput" placeholder="Enter Roll No"></td>
+                <td><input type="number" min="1" max="5" id="q1"></td>
+                <td><input type="number" min="1" max="5" id="q2"></td>
+                <td><input type="number" min="1" max="5" id="q3"></td>
+                <td><input type="number" min="1" max="5" id="q4"></td>
+                <td><input type="number" min="1" max="5" id="q5"></td>
+                <td><input type="number" min="1" max="5" id="q6"></td>
+            </tr>
+        `;
     }
 
+    document.addEventListener("DOMContentLoaded", function () {
+        loadSavedData();
+    });
 </script>
-
-</body>
 
 </html>
