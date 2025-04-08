@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,8 +38,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        th,
-        td {
+        th, td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: center;
@@ -81,15 +79,8 @@
             transition: all 0.3s ease;
         }
 
-        .save-btn {
-            background: #28a745;
-            color: white;
-        }
-
-        .next-btn {
-            background: #ffc107;
-            color: black;
-        }
+        .save-btn { background: #28a745; color: white; }
+        .next-btn { background: #ffc107; color: black; }
 
         button:hover {
             opacity: 0.8;
@@ -108,7 +99,6 @@
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-
 <body>
     <div class="container">
         <h2>Course Exit Form Analysis</h2>
@@ -228,12 +218,9 @@
         </div>
     </div>
 </body>
-
 <script>
-    let tempData = []; // Temporary storage for uploaded data
+    let tempData = [];
 
-    // Handle CSV Upload
-    // Handle CSV Upload
     function handleCSVUpload() {
         let fileInput = document.getElementById("csvFile");
         let file = fileInput.files[0];
@@ -261,14 +248,12 @@
             displayTempData();
             updateAnalysisTable(tempData);
         };
-
         reader.readAsText(file);
     }
 
-    // Display temporary data in the first table
     function displayTempData() {
         let tbody = document.getElementById("inputTableBody");
-        tbody.innerHTML = ""; // Clear existing rows
+        tbody.innerHTML = "";
 
         tempData.forEach(data => {
             let row = tbody.insertRow();
@@ -284,12 +269,11 @@
         });
     }
 
-    // Save course data (manual entry or uploaded CSV)
     async function save_course_data() {
         let dataToSave = [];
 
         if (tempData.length > 0) {
-            dataToSave = tempData; // Use uploaded CSV data
+            dataToSave = tempData;
         } else {
             let rollNo = document.getElementById("rollNoInput").value.trim();
             let q1 = document.getElementById("q1").value;
@@ -308,7 +292,6 @@
         }
 
         try {
-            // Save course data
             let response = await fetch("/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -316,7 +299,6 @@
             });
             let result = await response.json();
 
-            // Save analysis data
             let analysisData = calculateAnalysis(dataToSave);
             await fetch('/save_analysis', {
                 method: 'POST',
@@ -325,15 +307,14 @@
             });
 
             alert(result.message || "Data saved successfully!");
-            tempData = []; // Clear temporary data
+            tempData = [];
             clearInputs();
-            loadSavedData(); // Refresh saved data table
+            loadSavedData();
         } catch (error) {
             console.error("Error:", error);
         }
     }
 
-    // Load saved data
     async function loadSavedData() {
         let table = document.getElementById("savedDataTable");
         table.innerHTML = `
@@ -376,7 +357,6 @@
         }
     }
 
-    // Update analysis table
     function updateAnalysisTable(data) {
         let analysisData = calculateAnalysis(data);
 
@@ -392,9 +372,19 @@
         document.getElementById("wtAvgCO4").textContent = analysisData.wt_avg_co4.toFixed(2) || "-";
         document.getElementById("wtAvgCO5").textContent = analysisData.wt_avg_co5.toFixed(2) || "-";
         document.getElementById("wtAvgCO6").textContent = analysisData.wt_avg_co6.toFixed(2) || "-";
+
+        // Add attainment levels
+        const wtAvgAttainments = {
+            co1: getAttainmentLevel(analysisData.wt_avg_co1),
+            co2: getAttainmentLevel(analysisData.wt_avg_co2),
+            co3: getAttainmentLevel(analysisData.wt_avg_co3),
+            co4: getAttainmentLevel(analysisData.wt_avg_co4),
+            co5: getAttainmentLevel(analysisData.wt_avg_co5),
+            co6: getAttainmentLevel(analysisData.wt_avg_co6)
+        };
+        // Optionally add to UI if needed (e.g., new row in analysisTable)
     }
 
-    // Calculate analysis metrics
     function calculateAnalysis(records) {
         if (!records || records.length === 0) {
             return {
@@ -432,7 +422,6 @@
         };
     }
 
-    // Delete data
     async function deleteData(rollNo) {
         if (!confirm("Are you sure you want to delete this record?")) return;
 
@@ -440,18 +429,16 @@
             let response = await fetch(`/delete/${rollNo}`, { method: "DELETE" });
             let result = await response.json();
             alert(result.message || result.error);
-            loadSavedData(); // Refresh data after deleting
+            loadSavedData();
         } catch (error) {
             console.error("Error deleting data:", error);
         }
     }
 
-    // Redirect to another page
     function students_analysis() {
         window.location.href = "/students_analysis";
     }
 
-    // Clear input fields
     function clearInputs() {
         document.getElementById("rollNoInput").value = "";
         document.getElementById("q1").value = "";
@@ -476,6 +463,48 @@
     document.addEventListener("DOMContentLoaded", function () {
         loadSavedData();
     });
-</script>
 
+    // New function to expose data
+    function getIndirectAssessmentData() {
+        return {
+            wt_avg_percentages: {
+                co1: parseFloat(document.getElementById("wtAvgCO1").textContent) || 0,
+                co2: parseFloat(document.getElementById("wtAvgCO2").textContent) || 0,
+                co3: parseFloat(document.getElementById("wtAvgCO3").textContent) || 0,
+                co4: parseFloat(document.getElementById("wtAvgCO4").textContent) || 0,
+                co5: parseFloat(document.getElementById("wtAvgCO5").textContent) || 0,
+                co6: parseFloat(document.getElementById("wtAvgCO6").textContent) || 0
+            },
+            wt_avg_attainments: {
+                co1: getAttainmentLevel(parseFloat(document.getElementById("wtAvgCO1").textContent) || 0),
+                co2: getAttainmentLevel(parseFloat(document.getElementById("wtAvgCO2").textContent) || 0),
+                co3: getAttainmentLevel(parseFloat(document.getElementById("wtAvgCO3").textContent) || 0),
+                co4: getAttainmentLevel(parseFloat(document.getElementById("wtAvgCO4").textContent) || 0),
+                co5: getAttainmentLevel(parseFloat(document.getElementById("wtAvgCO5").textContent) || 0),
+                co6: getAttainmentLevel(parseFloat(document.getElementById("wtAvgCO6").textContent) || 0)
+            }
+        };
+    }
+
+    // Add event listener to serve data
+    window.addEventListener('load', () => {
+        if (window.location.pathname.includes('course_exit_analysis')) {
+            fetch('/get_indirect_summary', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data) updateAnalysisTable(data);
+                });
+        }
+    });
+
+    // Add attainment level function
+    function getAttainmentLevel(percentage) {
+        if (percentage >= 75) return 3;
+        else if (percentage >= 50) return 2;
+        else return 1;
+    }
+</script>
 </html>

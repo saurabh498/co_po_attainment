@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Outcome Attainment Calculation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        h2 {
+            color: #333;
+            margin-top: 20px;
+        }
+        .container {
+            width: 90%;
+            max-width: 900px;
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #e8f0ff;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .calculate-btn {
+            background: #28a745;
+            color: white;
+        }
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+        .attainment-3 { background-color: #28a745; color: white; } /* Green for Level 3 (≥75 or ≥85) */
+        .attainment-2 { background-color: #ffc107; color: black; } /* Yellow for Level 2 (50-74 or 80-85) */
+        .attainment-1 { background-color: #dc3545; color: white; } /* Red for Level 1 (<50 or <80) */
+        .final-attainment { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Course Outcome Attainment Calculation</h2>
+        <table id="attainmentTable">
+            <thead>
+                <tr>
+                    <th>Course Outcome</th>
+                    <th>Total Ext (%)<br>Attainment</th>
+                    <th>Total Int (%)<br>Attainment</th>
+                    <th>Wt.Avg Max Percentage (%)<br>Attainment</th>
+                    <th>Final Attainment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>CSC305.1</td>
+                    <td id="totalExtCSC305.1">-</td>
+                    <td id="totalIntCSC305.1">-</td>
+                    <td id="wtAvgCSC305.1">-</td>
+                    <td id="finalCSC305.1" class="final-attainment">-</td>
+                </tr>
+                <tr>
+                    <td>CSC305.2</td>
+                    <td id="totalExtCSC305.2">-</td>
+                    <td id="totalIntCSC305.2">-</td>
+                    <td id="wtAvgCSC305.2">-</td>
+                    <td id="finalCSC305.2" class="final-attainment">-</td>
+                </tr>
+                <tr>
+                    <td>CSC305.3</td>
+                    <td id="totalExtCSC305.3">-</td>
+                    <td id="totalIntCSC305.3">-</td>
+                    <td id="wtAvgCSC305.3">-</td>
+                    <td id="finalCSC305.3" class="final-attainment">-</td>
+                </tr>
+                <tr>
+                    <td>CSC305.4</td>
+                    <td id="totalExtCSC305.4">-</td>
+                    <td id="totalIntCSC305.4">-</td>
+                    <td id="wtAvgCSC305.4">-</td>
+                    <td id="finalCSC305.4" class="final-attainment">-</td>
+                </tr>
+                <tr>
+                    <td>CSC305.5</td>
+                    <td id="totalExtCSC305.5">-</td>
+                    <td id="totalIntCSC305.5">-</td>
+                    <td id="wtAvgCSC305.5">-</td>
+                    <td id="finalCSC305.5" class="final-attainment">-</td>
+                </tr>
+                <tr>
+                    <td>CSC305.6</td>
+                    <td id="totalExtCSC305.6">-</td>
+                    <td id="totalIntCSC305.6">-</td>
+                    <td id="wtAvgCSC305.6">-</td>
+                    <td id="finalCSC305.6" class="final-attainment">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="buttons">
+            <button class="calculate-btn" onclick="calculateFinalAttainment()">Calculate Final Mapping</button>
+            <button class="reset-btn" onclick="resetTable()">Reset Table</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAttainmentData();
+        });
+
+        function fetchAttainmentData() {
+            Promise.all([
+                fetch('/get_direct_summary').then(res => res.json()),
+                fetch('/get_indirect_summary').then(res => res.json())
+            ])
+            .then(([directData, indirectData]) => {
+                displayInitialAttainment(directData, indirectData);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function getAttainmentLevel(percentage) {
+            if (percentage >= 75) return 3;  // Level 3 for Total Ext/Int
+            else if (percentage >= 50) return 2;  // Level 2 for Total Ext/Int
+            else return 1;  // Level 1 for Total Ext/Int
+
+            // For Wt.Avg Max Percentage (CEA)
+            if (percentage >= 85) return 3;  // Level 3 for CEA
+            else if (percentage >= 80 && percentage < 85) return 2;  // Level 2 for CEA
+            else return 1;  // Level 1 for CEA
+        }
+
+        function displayInitialAttainment(directData, indirectData) {
+            // Direct Assessment Data (Total Ext and Total Int percentages)
+            const totalExtPercentage = parseFloat(directData.perc1) || 0;
+            const totalIntPercentage = parseFloat(directData.perc2) || 0;
+            const totalExtAttainment = getAttainmentLevel(totalExtPercentage);
+            const totalIntAttainment = getAttainmentLevel(totalIntPercentage);
+
+            // Indirect Assessment Data (Wt.Avg Max Percentages)
+            const wtAvgPercentages = {
+                co1: parseFloat(indirectData.wtAvgCO1) || 0,
+                co2: parseFloat(indirectData.wtAvgCO2) || 0,
+                co3: parseFloat(indirectData.wtAvgCO3) || 0,
+                co4: parseFloat(indirectData.wtAvgCO4) || 0,
+                co5: parseFloat(indirectData.wtAvgCO5) || 0,
+                co6: parseFloat(indirectData.wtAvgCO6) || 0
+            };
+            const wtAvgAttainments = {
+                co1: getAttainmentLevel(wtAvgPercentages.co1),  // Use CEA range for indirect
+                co2: getAttainmentLevel(wtAvgPercentages.co2),
+                co3: getAttainmentLevel(wtAvgPercentages.co3),
+                co4: getAttainmentLevel(wtAvgPercentages.co4),
+                co5: getAttainmentLevel(wtAvgPercentages.co5),
+                co6: getAttainmentLevel(wtAvgPercentages.co6)
+            };
+
+            // Map to table with percentage and attainment in parentheses
+            const mappings = {
+                'CSC305.1': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co1 },
+                'CSC305.2': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co2 },
+                'CSC305.3': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co3 },
+                'CSC305.4': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co4 },
+                'CSC305.5': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co5 },
+                'CSC305.6': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co6 }
+            };
+
+            Object.keys(mappings).forEach(co => {
+                const totalExtAttn = getAttainmentLevel(mappings[co].totalExt);
+                const totalIntAttn = getAttainmentLevel(mappings[co].totalInt);
+                const wtAvgAttn = wtAvgAttainments[`co${co.split('.')[1]}`];
+                const totalExtCell = document.getElementById(`totalExt${co}`);
+                const totalIntCell = document.getElementById(`totalInt${co}`);
+                const wtAvgCell = document.getElementById(`wtAvg${co}`);
+                totalExtCell.textContent = `${mappings[co].totalExt.toFixed(2)}% (${totalExtAttn})`;
+                totalExtCell.className = `attainment-${totalExtAttn}`;
+                totalIntCell.textContent = `${mappings[co].totalInt.toFixed(2)}% (${totalIntAttn})`;
+                totalIntCell.className = `attainment-${totalIntAttn}`;
+                wtAvgCell.textContent = `${mappings[co].wtAvg.toFixed(2)}% (${wtAvgAttn})`;
+                wtAvgCell.className = `attainment-${wtAvgAttn}`;
+            });
+        }
+
+        function calculateFinalAttainment() {
+            const mappings = {
+                'CSC305.1': { 
+                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.1').textContent) || 0),
+                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.1').textContent) || 0),
+                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.1').textContent) || 0)
+                },
+                'CSC305.2': { 
+                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.2').textContent) || 0),
+                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.2').textContent) || 0),
+                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.2').textContent) || 0)
+                },
+                'CSC305.3': { 
+                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.3').textContent) || 0),
+                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.3').textContent) || 0),
+                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.3').textContent) || 0)
+                },
+                'CSC305.4': { 
+                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.4').textContent) || 0),
+                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.4').textContent) || 0),
+                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.4').textContent) || 0)
+                },
+                'CSC305.5': { 
+                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.5').textContent) || 0),
+                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.5').textContent) || 0),
+                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.5').textContent) || 0)
+                },
+                'CSC305.6': { 
+                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.6').textContent) || 0),
+                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.6').textContent) || 0),
+                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.6').textContent) || 0)
+                }
+            };
+
+            Object.keys(mappings).forEach(co => {
+                const directComponent = (0.8 * mappings[co].seeAttn) + (0.2 * mappings[co].cieAttn);
+                const finalAttn = (0.9 * directComponent) + (0.1 * mappings[co].cesAttn);
+                const finalCell = document.getElementById(`final${co}`);
+                finalCell.textContent = finalAttn.toFixed(2);
+                // Color coding based on final attainment (e.g., >2.0 for green, ≥1.0 for yellow, <1.0 for red)
+                if (finalAttn > 2.0) finalCell.classList.add('attainment-3');
+                else if (finalAttn >= 1.0) finalCell.classList.add('attainment-2');
+                else finalCell.classList.add('attainment-1');
+            });
+            alert("Final Attainment Calculated Successfully!");
+        }
+
+        function resetTable() {
+            const cells = document.querySelectorAll('#attainmentTable td');
+            cells.forEach(cell => {
+                cell.textContent = '-';
+                cell.className = ''; // Remove any attainment classes
+            });
+            document.getElementById('finalCSC305.1').className = 'final-attainment';
+            document.getElementById('finalCSC305.2').className = 'final-attainment';
+            document.getElementById('finalCSC305.3').className = 'final-attainment';
+            document.getElementById('finalCSC305.4').className = 'final-attainment';
+            document.getElementById('finalCSC305.5').className = 'final-attainment';
+            document.getElementById('finalCSC305.6').className = 'final-attainment';
+            fetchAttainmentData(); // Reload data
+            alert("Table reset and data reloaded!");
+        }
+    </script>
+</body>
+</html>

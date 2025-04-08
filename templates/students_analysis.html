@@ -125,10 +125,10 @@
         <div class="button-container">
             <button onclick="addRow()">Add Row</button>
             <button onclick="processData()">Analyze Performance</button>
-            <button onclick="saveAnalysis()">Save Data</button>
+            <button id="saveBtn" onclick="saveAnalysis()">Save Data</button>
             <button onclick="viewSavedData()">View Saved Data</button>
             <button onclick="deleteAnalysis()">Delete</button>
-            <button onclick="newfile()">Next</button>
+            <button onclick="Co_Attainment_Cal()">Next</button>
         </div>
         <!-- Naya Table -->
         <h2>Saved Analysis Data</h2>
@@ -199,18 +199,19 @@
 
 
         function processData() {
-            const maxMarks = 20; // Class Test 1 ka total marks yahan set karein (e.g., 50)
+            const maxMarks = 20; // Class Test 1 ka total marks yahan set karein
 
             document.querySelectorAll("#studentTable tbody tr").forEach(row => {
                 const marks = parseFloat(row.cells[2].textContent);
                 if (isNaN(marks)) return; // Agar marks invalid hain to skip karein
 
-                // **Automatically calculate percentage**
+                // Percentage calculate karo
                 const percentage = (marks / maxMarks) * 100;
-                row.cells[3].textContent = percentage.toFixed(2) + "%"; // Update percentage in table
+                row.cells[3].textContent = percentage.toFixed(2) + "%";
 
-                // **Category & Observation Logic**
+                // Category aur observation logic
                 let category = "", observation = "";
+
                 if (percentage >= 75) {
                     category = "Bright";
                     row.className = "bright";
@@ -219,44 +220,76 @@
                     category = "Fail";
                     row.className = "Fail";
                     observation = "Needs Improvement";
+                } else if (percentage >= 40 && percentage <= 50) {
+                    category = "Weak";
+                    row.className = "improvement";
+                    observation = "Needs TO Study Hard";
                 } else {
                     category = "Average";
                     row.className = "improvement";
                     observation = "Can Do Better";
                 }
+
                 row.cells[4].textContent = category;
                 row.cells[5].textContent = observation;
             });
         }
 
-
         function saveAnalysis() {
             const tableData = [];
             document.querySelectorAll("#studentTable tbody tr").forEach(row => {
                 const student = {
-                    roll_no: row.cells[0].textContent,
-                    name: row.cells[1].textContent,
-                    marks: row.cells[2].textContent,
-                    percentage: row.cells[3].textContent,
-                    category: row.cells[4].textContent,
-                    observation: row.cells[5].textContent
+                    roll_no: row.cells[0].textContent.trim(),
+                    name: row.cells[1].textContent.trim(),
+                    marks: row.cells[2].textContent.trim(),
+                    percentage: row.cells[3].textContent.trim(),
+                    category: row.cells[4].textContent.trim(),
+                    observation: row.cells[5].textContent.trim()
                 };
                 tableData.push(student);
             });
 
-            fetch("/save_analysis", {
+            if (tableData.length === 0) {
+                alert("No data to save!");
+                return;
+            }
+
+            const saveButton = document.getElementById("saveBtn");
+            if (!saveButton) {
+                console.error("Save button not found!");
+                return;
+            }
+
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+
+            console.log("Sending data:", tableData); // Debug log
+
+            fetch("/save_data_analysis", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(tableData)
             })
-                .then(response => response.json())
-                .then(data => alert(data.message))
-                .catch(error => console.error("Error:", error));
+                .then(response => {
+                    console.log("Response status:", response.status); // Debug log
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Response data:", data); // Debug log
+                    alert(data.message);
+                })
+                .catch(error => {
+                    console.error("Fetch error:", error);
+                    alert("Failed to save data: " + error.message);
+                })
+                .finally(() => {
+                    saveButton.disabled = false;
+                    saveButton.textContent = "Save Data";
+                });
         }
-
-
 
         function viewSavedData() {
             fetch('/view_saved_data')
@@ -336,9 +369,10 @@
         }
 
 
-        function newfile() {
-    window.location.href = "/newfile";
-}
+        function Co_Attainment_Cal() {
+            window.location.href = "/Co_Attainment_Cal";
+        }
+
 
     </script>
 

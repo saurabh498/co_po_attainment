@@ -657,128 +657,6 @@ def load_data():
         ]
     })
 
-@app.route('/course_exit_analysis')
-def course_exit_analysis():
-    return render_template('course_exit_analysis.html')  # Your new HTML file
-
-# Upload CSV (validate and return data for display, no saving yet)
-@app.route('/upload_csv', methods=['POST'])
-def upload_csv():
-    try:
-        data = request.get_json()
-        if not data or not isinstance(data, list):
-            return jsonify({'error': 'Invalid or empty CSV data'}), 400
-        
-        # Validate each record
-        for record in data:
-            if not all(key in record for key in ['roll_no', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6']):
-                return jsonify({'error': 'Missing required fields in CSV data'}), 400
-            if not all(isinstance(record[f'q{i}'], (int, str)) and 1 <= int(record[f'q{i}']) <= 5 for i in range(1, 7)):
-                return jsonify({'error': 'Question values must be between 1 and 5'}), 400
-        
-        return jsonify({'message': 'CSV data validated successfully', 'data': data}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Save Data (manual entry or bulk CSV data)
-@app.route('/save', methods=['POST'])
-def save_data():
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-
-    try:
-        entries = data if isinstance(data, list) else [data]
-        for entry in entries:
-            # Check if roll_no already exists
-            existing = CourseExitForm.query.filter_by(roll_no=entry['roll_no']).first()
-            if existing:
-                # Update existing record
-                existing.q1 = entry['q1']
-                existing.q2 = entry['q2']
-                existing.q3 = entry['q3']
-                existing.q4 = entry['q4']
-                existing.q5 = entry['q5']
-                existing.q6 = entry['q6']
-            else:
-                # Insert new record
-                new_entry = CourseExitForm(**entry)
-                db.session.add(new_entry)
-        
-        db.session.commit()
-        return jsonify({'message': 'Course data saved successfully'}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Failed to save data: {str(e)}'}), 500
-
-# Save Analysis Data
-@app.route('/save_analysis', methods=['POST'])
-def save_analysis():
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No analysis data provided'}), 400
-
-    try:
-        new_analysis = CourseAnalysis(
-            avg_co1=data['avg_co1'],
-            avg_co2=data['avg_co2'],
-            avg_co3=data['avg_co3'],
-            avg_co4=data['avg_co4'],
-            avg_co5=data['avg_co5'],
-            avg_co6=data['avg_co6'],
-            max_co1=data.get('max_co1', 5),  # Default to 5 if not provided
-            max_co2=data.get('max_co2', 5),
-            max_co3=data.get('max_co3', 5),
-            max_co4=data.get('max_co4', 5),
-            max_co5=data.get('max_co5', 5),
-            max_co6=data.get('max_co6', 5),
-            wt_avg_co1=data['wt_avg_co1'],
-            wt_avg_co2=data['wt_avg_co2'],
-            wt_avg_co3=data['wt_avg_co3'],
-            wt_avg_co4=data['wt_avg_co4'],
-            wt_avg_co5=data['wt_avg_co5'],
-            wt_avg_co6=data['wt_avg_co6']
-        )
-        db.session.add(new_analysis)
-        db.session.commit()
-        return jsonify({'message': 'Analysis data saved successfully'}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Failed to save analysis: {str(e)}'}), 500
-
-# View Saved Course Data
-@app.route('/view', methods=['GET'])
-def view_data():
-    records = CourseExitForm.query.all()
-    return jsonify([{
-        'roll_no': r.roll_no, 'q1': r.q1, 'q2': r.q2, 'q3': r.q3,
-        'q4': r.q4, 'q5': r.q5, 'q6': r.q6
-    } for r in records])
-
-# View Saved Analysis Data (optional, if you want to display historical analysis)
-@app.route('/view_analysis', methods=['GET'])
-def view_analysis():
-    records = CourseAnalysis.query.all()
-    return jsonify([{
-        'analysis_date': r.analysis_date.isoformat(),
-        'avg_co1': r.avg_co1, 'avg_co2': r.avg_co2, 'avg_co3': r.avg_co3,
-        'avg_co4': r.avg_co4, 'avg_co5': r.avg_co5, 'avg_co6': r.avg_co6,
-        'max_co1': r.max_co1, 'max_co2': r.max_co2, 'max_co3': r.max_co3,
-        'max_co4': r.max_co4, 'max_co5': r.max_co5, 'max_co6': r.max_co6,
-        'wt_avg_co1': r.wt_avg_co1, 'wt_avg_co2': r.wt_avg_co2, 'wt_avg_co3': r.wt_avg_co3,
-        'wt_avg_co4': r.wt_avg_co4, 'wt_avg_co5': r.wt_avg_co5, 'wt_avg_co6': r.wt_avg_co6
-    } for r in records])
-
-# Delete Data
-@app.route('/delete/<string:roll_no>', methods=['DELETE'])
-def delete_data(roll_no):
-    record = CourseExitForm.query.filter_by(roll_no=roll_no).first()
-    if record:
-        db.session.delete(record)
-        db.session.commit()
-        return jsonify({'message': 'Record deleted successfully'})
-    return jsonify({'error': 'Roll No not found'}), 404
-
 
 @app.route('/direct_assesment')
 def direct_assesment():
@@ -907,25 +785,201 @@ def delete_marks():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": f"Error deleting data: {str(e)}"}), 500        
+        return jsonify({"message": f"Error deleting data: {str(e)}"}), 500
 
+# New route to serve summary data for Co_Attainment_Cal.html
+@app.route('/get_direct_summary', methods=['GET'])
+def get_direct_summary():
+    try:
+        # Fetch the latest AssessmentSummary
+        latest_summary = AssessmentSummary.query.order_by(AssessmentSummary.timestamp.desc()).first()
+        if not latest_summary:
+            return jsonify({
+                'error': 'No summary data available',
+                'perc1': '0',  # Total Ext %
+                'perc2': '0'   # Total Int %
+            }), 404
+
+        # Calculate Total Ext and Total Int percentages
+        # Assuming max_ext_marks and max_int_marks are averages or totals; adjust if they represent something else
+        total_ext_percentage = (latest_summary.max_ext_marks / 80) * 100 if latest_summary.max_ext_marks else 0
+        total_int_percentage = (latest_summary.max_int_marks / 20) * 100 if latest_summary.max_int_marks else 0
+
+        return jsonify({
+            'perc1': f'{total_ext_percentage:.2f}',  # Total Ext % (e.g., 58.00 from image)
+            'perc2': f'{total_int_percentage:.2f}'   # Total Int % (e.g., 98.05 from image)
+        }), 200
+
+    except Exception as e:
+        return jsonify({"message": f"Error fetching summary data: {str(e)}"}), 500
+
+@app.route('/course_exit_analysis')
+def course_exit_analysis():
+    return render_template('course_exit_analysis.html')  # Your new HTML file
+
+# Upload CSV (validate and return data for display, no saving yet)
+@app.route('/upload_csv', methods=['POST'])
+def upload_csv():
+    try:
+        data = request.get_json()
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid or empty CSV data'}), 400
+        
+        # Validate each record
+        for record in data:
+            if not all(key in record for key in ['roll_no', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6']):
+                return jsonify({'error': 'Missing required fields in CSV data'}), 400
+            if not all(isinstance(record[f'q{i}'], (int, str)) and 1 <= int(record[f'q{i}']) <= 5 for i in range(1, 7)):
+                return jsonify({'error': 'Question values must be between 1 and 5'}), 400
+        
+        return jsonify({'message': 'CSV data validated successfully', 'data': data}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Save Data (manual entry or bulk CSV data)
+@app.route('/save', methods=['POST'])
+def save_data():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    try:
+        entries = data if isinstance(data, list) else [data]
+        for entry in entries:
+            # Check if roll_no already exists
+            existing = CourseExitForm.query.filter_by(roll_no=entry['roll_no']).first()
+            if existing:
+                # Update existing record
+                existing.q1 = entry['q1']
+                existing.q2 = entry['q2']
+                existing.q3 = entry['q3']
+                existing.q4 = entry['q4']
+                existing.q5 = entry['q5']
+                existing.q6 = entry['q6']
+            else:
+                # Insert new record
+                new_entry = CourseExitForm(**entry)
+                db.session.add(new_entry)
+        
+        db.session.commit()
+        return jsonify({'message': 'Course data saved successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to save data: {str(e)}'}), 500
+
+# Save Analysis Data
+@app.route('/save_analysis', methods=['POST'])
+def save_analysis():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No analysis data provided'}), 400
+
+    try:
+        new_analysis = CourseAnalysis(
+            avg_co1=data['avg_co1'],
+            avg_co2=data['avg_co2'],
+            avg_co3=data['avg_co3'],
+            avg_co4=data['avg_co4'],
+            avg_co5=data['avg_co5'],
+            avg_co6=data['avg_co6'],
+            max_co1=data.get('max_co1', 5),  # Default to 5 if not provided
+            max_co2=data.get('max_co2', 5),
+            max_co3=data.get('max_co3', 5),
+            max_co4=data.get('max_co4', 5),
+            max_co5=data.get('max_co5', 5),
+            max_co6=data.get('max_co6', 5),
+            wt_avg_co1=data['wt_avg_co1'],
+            wt_avg_co2=data['wt_avg_co2'],
+            wt_avg_co3=data['wt_avg_co3'],
+            wt_avg_co4=data['wt_avg_co4'],
+            wt_avg_co5=data['wt_avg_co5'],
+            wt_avg_co6=data['wt_avg_co6']
+        )
+        db.session.add(new_analysis)
+        db.session.commit()
+        return jsonify({'message': 'Analysis data saved successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to save analysis: {str(e)}'}), 500
+
+# View Saved Course Data
+@app.route('/view', methods=['GET'])
+def view_data():
+    records = CourseExitForm.query.all()
+    return jsonify([{
+        'roll_no': r.roll_no, 'q1': r.q1, 'q2': r.q2, 'q3': r.q3,
+        'q4': r.q4, 'q5': r.q5, 'q6': r.q6
+    } for r in records])
+
+# View Saved Analysis Data (optional, if you want to display historical analysis)
+@app.route('/view_analysis', methods=['GET'])
+def view_analysis():
+    records = CourseAnalysis.query.all()
+    return jsonify([{
+        'analysis_date': r.analysis_date.isoformat(),
+        'avg_co1': r.avg_co1, 'avg_co2': r.avg_co2, 'avg_co3': r.avg_co3,
+        'avg_co4': r.avg_co4, 'avg_co5': r.avg_co5, 'avg_co6': r.avg_co6,
+        'max_co1': r.max_co1, 'max_co2': r.max_co2, 'max_co3': r.max_co3,
+        'max_co4': r.max_co4, 'max_co5': r.max_co5, 'max_co6': r.max_co6,
+        'wt_avg_co1': r.wt_avg_co1, 'wt_avg_co2': r.wt_avg_co2, 'wt_avg_co3': r.wt_avg_co3,
+        'wt_avg_co4': r.wt_avg_co4, 'wt_avg_co5': r.wt_avg_co5, 'wt_avg_co6': r.wt_avg_co6
+    } for r in records])
+
+# Delete Data
+@app.route('/delete/<string:roll_no>', methods=['DELETE'])
+def delete_data(roll_no):
+    record = CourseExitForm.query.filter_by(roll_no=roll_no).first()
+    if record:
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify({'message': 'Record deleted successfully'})
+    return jsonify({'error': 'Roll No not found'}), 404
+
+# New route to serve summary data for Co_Attainment_Cal.html
+@app.route('/get_indirect_summary', methods=['GET'])
+def get_indirect_summary():
+    try:
+        # Fetch the latest CourseAnalysis
+        latest_analysis = CourseAnalysis.query.order_by(CourseAnalysis.analysis_date.desc()).first()
+        if not latest_analysis:
+            return jsonify({
+                'error': 'No analysis data available',
+                'wtAvgCO1': 0.0,
+                'wtAvgCO2': 0.0,
+                'wtAvgCO3': 0.0,
+                'wtAvgCO4': 0.0,
+                'wtAvgCO5': 0.0,
+                'wtAvgCO6': 0.0
+            }), 404
+
+        # Return Wt.Avg Max Percentages
+        return jsonify({
+            'wtAvgCO1': float(latest_analysis.wt_avg_co1),
+            'wtAvgCO2': float(latest_analysis.wt_avg_co2),
+            'wtAvgCO3': float(latest_analysis.wt_avg_co3),
+            'wtAvgCO4': float(latest_analysis.wt_avg_co4),
+            'wtAvgCO5': float(latest_analysis.wt_avg_co5),
+            'wtAvgCO6': float(latest_analysis.wt_avg_co6)
+        }), 200
+
+    except Exception as e:
+        return jsonify({"message": f"Error fetching summary data: {str(e)}"}), 500
 
 @app.route('/students_analysis')
 def students_analysis():
     return render_template('students_analysis.html')
 
 @app.route('/save_data_analysis', methods=['POST'])
-def save__data_analysis():
-    data = request.json  # JSON data from frontend
-
+def save_data_analysis():
+    data = request.json
     try:
         for student in data:
-            percentage_value = student['percentage'].replace('%', '').strip()  # Remove '%'
+            percentage_value = student['percentage'].replace('%', '').strip()
             new_student = StudentPerformance(
                 roll_no=student['roll_no'],
                 name=student['name'],
                 test_marks=float(student['marks']),
-                test_percentage=float(percentage_value),  # Now it's a valid float
+                test_percentage=float(percentage_value),
                 category=student['category'],
                 observation=student['observation']
             )
@@ -935,6 +989,7 @@ def save__data_analysis():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
 
 
 @app.route('/view_saved_data', methods=['GET'])
@@ -987,6 +1042,9 @@ def update_analysis(roll_no):
         elif student.test_percentage < 40:
             student.category = "Fail"
             student.observation = "Needs Improvement"
+        elif student.test_percentage >= 40 and student.test_percentage <= 50:
+            student.category = "Weak"
+            student.observation = "Needs To Study Hard "    
         else:
             student.category = "Average"
             student.observation = "Can Do Better"
@@ -1025,6 +1083,23 @@ def delete_analysis(roll_no):
     db.session.commit()
     
     return jsonify({"message": f"Record for Roll No. {roll_no} deleted successfully!"})
+
+@app.route('/Co_Attainment_Cal')
+def co_attainment_cal():
+    return render_template('co_attainment_cal.html')  # Or the appropriate template
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/newfile', methods=['GET'])
 def newfile():

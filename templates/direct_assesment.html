@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,14 +31,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
             background: white;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        th,
-        td {
+        th, td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: center;
@@ -88,35 +87,12 @@
             transition: all 0.3s ease;
         }
 
-        .add-btn {
-            background: #007bff;
-            color: white;
-        }
-
-        .save-btn {
-            background: #28a745;
-            color: white;
-        }
-
-        .view-btn {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-        }
-
-        .next-btn {
-            background: #ffc107;
-            color: black;
-        }
-
-        .upload-btn {
-            background: #6c757d;
-            color: white;
-        }
+        .add-btn { background: #007bff; color: white; }
+        .save-btn { background: #28a745; color: white; }
+        .view-btn { background: #17a2b8; color: white; }
+        .delete-btn { background: #dc3545; color: white; }
+        .next-btn { background: #ffc107; color: black; }
+        .upload-btn { background: #6c757d; color: white; }
 
         button:hover {
             opacity: 0.8;
@@ -146,35 +122,12 @@
             text-align: center;
         }
 
-        .label {
-            font-weight: bold;
-            margin-right: 10px;
-            color: #333;
-        }
-
-        .value {
-            font-size: 16px;
-            color: #000;
-            margin-right: 5px;
-            /* Space between values */
-        }
-
-        .highlight {
-            background-color: #ff4500;
-            /* Orange highlight as in the image */
-            color: white;
-            font-weight: bold;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin-top: 10px;
-        }
+        .label { font-weight: bold; margin-right: 10px; color: #333; }
+        .value { font-size: 16px; color: #000; margin-right: 5px; }
+        .highlight { background-color: #ff4500; color: white; font-weight: bold; }
+        .summary-row { display: flex; justify-content: space-between; width: 100%; margin-top: 10px; }
     </style>
 </head>
-
 <body>
     <div class="container">
         <h2>Direct Assessment Marklist</h2>
@@ -193,10 +146,8 @@
                 <tr>
                     <td><input type="text" class="roll_no" placeholder="Enter Roll No" /></td>
                     <td><input type="text" class="student_name" placeholder="Enter Student Name" /></td>
-                    <td><input type="number" class="ext_total" placeholder="Enter External Total" min="0" max="80" />
-                    </td>
-                    <td><input type="number" class="int_total" placeholder="Enter Internal Total" min="0" max="20" />
-                    </td>
+                    <td><input type="number" class="ext_total" placeholder="Enter External Total" min="0" max="80" /></td>
+                    <td><input type="number" class="int_total" placeholder="Enter Internal Total" min="0" max="20" /></td>
                     <td><input type="text" class="total" placeholder="Total" readonly /></td>
                     <td><input type="text" class="grade" placeholder="Grade" readonly /></td>
                 </tr>
@@ -212,8 +163,6 @@
             <button class="view-btn" onclick="viewData()">View</button>
             <button class="next-btn" onclick="course_exit_analysis()">Next</button>
         </div>
-
-
 
         <div id="savedData">
             <h3>Saved Data</h3>
@@ -289,16 +238,14 @@
 
             let totals = [];
 
-            for (let i = 1; i < rows.length; i++) { // Skip header row if present
+            for (let i = 1; i < rows.length; i++) {
                 const cols = rows[i].split(',').map(col => col.trim());
-                if (cols.length < 5) continue; // Ensure we have enough columns
+                if (cols.length < 5) continue;
 
-                // Calculate total from external and internal marks
                 const extTotal = parseInt(cols[2]) || 0;
                 const intTotal = parseInt(cols[3]) || 0;
                 const total = extTotal + intTotal;
 
-                // Calculate grade based on total
                 let grade = "";
                 if (total >= 90) grade = "A+";
                 else if (total >= 80) grade = "A";
@@ -307,7 +254,6 @@
                 else if (total >= 50) grade = "D";
                 else grade = "F";
 
-                // Create row with input fields matching the original structure
                 let row = document.createElement('tr');
                 row.innerHTML = `
                     <td><input type="text" class="roll_no" value="${cols[0]}" /></td>
@@ -317,17 +263,14 @@
                     <td><input type="text" class="total" value="${total}" readonly /></td>
                     <td><input type="text" class="grade" value="${grade}" readonly /></td>
                 `;
-
                 tableBody.appendChild(row);
                 totals.push(total);
-                addEventListenersToRow(row); // Add event listeners to the new row
+                addEventListenersToRow(row);
             }
 
-            // Update summary after parsing CSV
-            updateSummary(totals);
+            updateSummaryFromTable();
         }
 
-        // Function to calculate total and grade for a row
         function calculateTotalAndGrade(row) {
             let extInput = row.querySelector(".ext_total");
             let intInput = row.querySelector(".int_total");
@@ -337,14 +280,8 @@
             let ext = parseInt(extInput.value) || 0;
             let int = parseInt(intInput.value) || 0;
 
-            if (ext > 80) {
-                ext = 80;
-                extInput.value = 80;
-            }
-            if (int > 20) {
-                int = 20;
-                intInput.value = 20;
-            }
+            if (ext > 80) { ext = 80; extInput.value = 80; }
+            if (int > 20) { int = 20; intInput.value = 20; }
 
             let total = ext + int;
             totalInput.value = total;
@@ -359,13 +296,10 @@
             gradeInput.value = grade;
         }
 
-        // Add event listeners to all inputs dynamically
         function addEventListenersToRow(row) {
             row.querySelector(".roll_no").addEventListener("blur", function () {
                 let rollNo = this.value.trim();
-                if (rollNo) {
-                    fetchStudentName(rollNo, row);
-                }
+                if (rollNo) fetchStudentName(rollNo, row);
             });
 
             row.querySelector(".ext_total").addEventListener("input", function () {
@@ -378,12 +312,8 @@
             });
         }
 
-        // Initialize event listeners for the first row
-        document.querySelectorAll("#marklist tr").forEach(row => {
-            addEventListenersToRow(row);
-        });
+        document.querySelectorAll("#marklist tr").forEach(row => addEventListenersToRow(row));
 
-        // Function to add a new row in the table
         function addRow() {
             let table = document.getElementById("marklist");
             let newRow = table.insertRow();
@@ -407,14 +337,12 @@
                 if (total > 0) totals.push(total);
             });
 
-            updateSummary(totals);
+            updateSummary();
         }
 
-        // Function to update summary table
         function updateSummary(dataFromServer = null) {
             let rows;
             if (dataFromServer) {
-                // Use data directly from server
                 rows = dataFromServer.map(entry => ({
                     ext: parseFloat(entry.total_ext) || 0,
                     int: parseFloat(entry.total_int) || 0,
@@ -422,7 +350,6 @@
                     grade: entry.grade.trim().toUpperCase()
                 }));
             } else {
-                // Use DOM table (original)
                 rows = Array.from(document.querySelectorAll("#marklist tr")).map(row => ({
                     ext: parseFloat(row.querySelector(".ext_total").value) || 0,
                     int: parseFloat(row.querySelector(".int_total").value) || 0,
@@ -435,8 +362,7 @@
             const validStudents = validRows.length;
 
             if (validStudents === 0) {
-                ["avg1", "avg2", "avg3", "avgGrade", "max1", "max2", "max3", "perc1", "perc2", "perc3"]
-                    .forEach(id => document.getElementById(id).value = "");
+                ["avg1", "avg2", "avg3", "avgGrade", "max1", "max2", "max3", "perc1", "perc2", "perc3"].forEach(id => document.getElementById(id).value = "");
                 return;
             }
 
@@ -453,16 +379,13 @@
             const percInt = (Math.floor((intSum / (maxMarks.internal * validStudents)) * 100)).toFixed(2) + "%";
             const percTotal = (Math.floor((grandSum / (maxMarks.total * validStudents)) * 100)).toFixed(2) + "%";
 
-            // Grade counting
+            const totalExtAttainment = getAttainmentLevel(parseFloat(percExt));
+            const totalIntAttainment = getAttainmentLevel(parseFloat(percInt));
+
             const gradeCount = {};
-            validRows.forEach(row => {
-                if (row.grade) {
-                    gradeCount[row.grade] = (gradeCount[row.grade] || 0) + 1;
-                }
-            });
+            validRows.forEach(row => { if (row.grade) gradeCount[row.grade] = (gradeCount[row.grade] || 0) + 1; });
             const mostCommonGrade = Object.keys(gradeCount).reduce((a, b) => gradeCount[a] > gradeCount[b] ? a : b, "N/A") + " Grade";
 
-            // Update UI
             document.getElementById("avg1").value = avgExt;
             document.getElementById("avg2").value = avgInt;
             document.getElementById("avg3").value = avgTotal;
@@ -475,26 +398,16 @@
             document.getElementById("perc3").value = percTotal;
         }
 
-
-        // Function to get the most common grade
         function getMostCommonGrade() {
             let gradeCount = {};
             let rows = document.querySelectorAll("#marklist tr");
             rows.forEach(row => {
                 let grade = row.querySelector(".grade").value.trim();
-                if (grade) {
-                    gradeCount[grade] = (gradeCount[grade] || 0) + 1;
-                }
+                if (grade) gradeCount[grade] = (gradeCount[grade] || 0) + 1;
             });
-
-            let mostCommonGrade = Object.keys(gradeCount).reduce((a, b) =>
-                gradeCount[a] > gradeCount[b] ? a : b,
-                Object.keys(gradeCount)[0] || "N/A"
-            );
-            return mostCommonGrade || "N/A";
+            return Object.keys(gradeCount).reduce((a, b) => gradeCount[a] > gradeCount[b] ? a : b, "N/A");
         }
 
-        // Placeholder functions
         function saveData() {
             let rows = document.querySelectorAll("#marklist tr");
             let data = [];
@@ -512,7 +425,6 @@
                     alert("Please fill in Roll No and Student Name for all rows.");
                     return;
                 }
-
                 if (totalExt < 0 || totalExt > 80) {
                     alert(`Invalid External Marks for Roll No ${rollNo}. Must be between 0 and 80.`);
                     return;
@@ -539,22 +451,15 @@
 
             fetch('/save_marks', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(result => {
                     if (result.message === "Data saved successfully") {
                         alert("Student data saved successfully!");
                         updateSummaryFromTable();
-                        saveSummary(); // Save summary after student data is saved
+                        saveSummary();
                     } else {
                         alert("Error saving data: " + result.message);
                     }
@@ -566,50 +471,130 @@
         }
 
         function saveSummary() {
-            const avg = parseFloat(document.getElementById("avg3").value) || 0;  // avg3 = overall average
-            const maxExt = parseInt(document.getElementById("max1").value) || 80; // max1 = external max
-            const maxInt = parseInt(document.getElementById("max2").value) || 20; // max2 = internal max
-            const percentageStr = document.getElementById("perc3").value || "0%"; // perc3 = overall %
-            const percentage = parseFloat(percentageStr.replace('%', '')) || 0;
-            const grade = document.getElementById("avgGrade").value || "F";
+        const rows = document.querySelectorAll("#marklist tr");
+        let validRows = Array.from(rows).filter(row => {
+            const ext = parseInt(row.querySelector(".ext_total").value) || 0;
+            const int = parseInt(row.querySelector(".int_total").value) || 0;
+            return ext > 0 || int > 0;
+        });
+        const validStudents = validRows.length;
 
-            const summaryData = {
-                average_marks: avg,
-                max_ext_marks: maxExt,
-                max_int_marks: maxInt,
-                overall_percentage: percentage,
-                most_common_grade: grade,
-                timestamp: new Date().toISOString()
-            };
-
-            fetch('/save_summary', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(summaryData)
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    if (result.message === "Summary saved successfully") {
-                        console.log("Summary saved successfully!");
-                        alert("Summary saved successfully!");
-                    } else {
-                        console.error("Error saving summary: ", result.message);
-                        alert("Error saving summary: " + result.message);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error saving summary: ", error);
-                    alert("An error occurred while saving summary: " + error.message);
-                });
+        if (validStudents === 0) {
+            alert("No valid data to summarize.");
+            return;
         }
 
+        const extSum = validRows.reduce((sum, row) => sum + (parseInt(row.querySelector(".ext_total").value) || 0), 0);
+        const intSum = validRows.reduce((sum, row) => sum + (parseInt(row.querySelector(".int_total").value) || 0), 0);
+        const grandSum = validRows.reduce((sum, row) => sum + (parseInt(row.querySelector(".total").value) || 0), 0);
+
+        const avgExt = Math.floor(extSum / validStudents);
+        const avgInt = Math.floor(intSum / validStudents);
+        const avgTotal = (grandSum / validStudents).toFixed(2);
+        const maxExtMarks = 80; // Maximum possible external marks
+        const maxIntMarks = 20; // Maximum possible internal marks
+        const percExt = (Math.floor((extSum / (maxExtMarks * validStudents)) * 100)).toFixed(2);
+        const percInt = (Math.floor((intSum / (maxIntMarks * validStudents)) * 100)).toFixed(2);
+        const percTotal = (Math.floor((grandSum / (100 * validStudents)) * 100)).toFixed(2);
+
+        const gradeCount = {};
+        validRows.forEach(row => {
+            const grade = row.querySelector(".grade").value.trim().toUpperCase();
+            if (grade) gradeCount[grade] = (gradeCount[grade] || 0) + 1;
+        });
+        const mostCommonGrade = Object.keys(gradeCount).reduce((a, b) => gradeCount[a] > gradeCount[b] ? a : b, "N/A");
+
+        const summaryData = {
+            average_marks: parseFloat(avgTotal),
+            max_ext_marks: avgExt,  // Using average as max for now; adjust if you mean maximum achieved
+            max_int_marks: avgInt,  // Using average as max for now; adjust if you mean maximum achieved
+            overall_percentage: parseFloat(percTotal),
+            most_common_grade: mostCommonGrade
+        };
+
+        fetch('/save_summary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(summaryData)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.message === "Summary saved successfully") {
+                console.log("Summary saved successfully!");
+                alert("Summary saved successfully!");
+            } else {
+                console.error("Error saving summary: ", result.message);
+                alert("Error saving summary: " + result.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error saving summary: ", error);
+            alert("An error occurred while saving summary: " + error.message);
+        });
+    }
+
+    // Call saveSummary after saveData
+    function saveData() {
+        let rows = document.querySelectorAll("#marklist tr");
+        let data = [];
+
+        rows.forEach(row => {
+            let rollNo = row.querySelector(".roll_no").value.trim();
+            let studentName = row.querySelector(".student_name").value.trim();
+            let totalExt = parseInt(row.querySelector(".ext_total").value) || 0;
+            let totalInt = parseInt(row.querySelector(".int_total").value) || 0;
+            let grade = row.querySelector(".grade").value.trim();
+
+            let totalMarks = totalExt + totalInt;
+
+            if (!rollNo || !studentName) {
+                alert("Please fill in Roll No and Student Name for all rows.");
+                return;
+            }
+            if (totalExt < 0 || totalExt > 80) {
+                alert(`Invalid External Marks for Roll No ${rollNo}. Must be between 0 and 80.`);
+                return;
+            }
+            if (totalInt < 0 || totalInt > 20) {
+                alert(`Invalid Internal Marks for Roll No ${rollNo}. Must be between 0 and 20.`);
+                return;
+            }
+
+            data.push({
+                roll_no: rollNo,
+                student_name: studentName,
+                total_ext: totalExt,
+                total_int: totalInt,
+                total_marks: totalMarks,
+                grade: grade
+            });
+        });
+
+        if (data.length === 0) {
+            alert("No data to save.");
+            return;
+        }
+
+        fetch('/save_marks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.message === "Data saved successfully") {
+                alert("Student data saved successfully!");
+                updateSummaryFromTable();
+                saveSummary();  // Trigger summary save after marks are saved
+            } else {
+                alert("Error saving data: " + result.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error saving data:", error);
+            alert("An error occurred while saving student data: " + error.message);
+        });
+    }
 
         function viewData() {
             fetch('/get_all_marks')
@@ -625,20 +610,20 @@
 
                     data.forEach(entry => {
                         let row = `
-                    <tr>
-                        <td>${entry.roll_no}</td>
-                        <td>${entry.student_name}</td>
-                        <td>${entry.total_ext}</td>
-                        <td>${entry.total_int}</td>
-                        <td>${entry.total_marks}</td>
-                        <td>${entry.grade}</td>
-                        <td><button class="delete-btn" onclick="deleteRow('${entry.roll_no}')">Delete</button></td>
-                    </tr>
-                `;
+                            <tr>
+                                <td>${entry.roll_no}</td>
+                                <td>${entry.student_name}</td>
+                                <td>${entry.total_ext}</td>
+                                <td>${entry.total_int}</td>
+                                <td>${entry.total_marks}</td>
+                                <td>${entry.grade}</td>
+                                <td><button class="delete-btn" onclick="deleteRow('${entry.roll_no}')">Delete</button></td>
+                            </tr>
+                        `;
                         tbody.innerHTML += row;
                     });
 
-                    updateSummary(data); // ✅ Pass data to new updateSummary
+                    updateSummary(data);
                 })
                 .catch(error => {
                     console.error("Error fetching data:", error);
@@ -646,14 +631,11 @@
                 });
         }
 
-
         function deleteRow(rollNo) {
             if (confirm(`Are you sure you want to delete the record for Roll No ${rollNo}?`)) {
                 fetch('/delete_marks', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ roll_nos: [rollNo] })
                 })
                     .then(response => response.json())
@@ -663,12 +645,10 @@
                             let rows = document.querySelectorAll("#marklist tr");
                             rows.forEach(row => {
                                 let rollInput = row.querySelector(".roll_no");
-                                if (rollInput && rollInput.value.trim() === rollNo) {
-                                    row.remove();
-                                }
+                                if (rollInput && rollInput.value.trim() === rollNo) row.remove();
                             });
-                            viewData(); // Refresh the Saved Data table
-                            updateSummaryFromTable(); // Update summary after delete
+                            viewData();
+                            updateSummaryFromTable();
                         } else {
                             alert("Error deleting data: " + result.message);
                         }
@@ -680,18 +660,47 @@
             }
         }
 
-        
         function course_exit_analysis() {
-      window.location.href = "/course_exit_analysis";
-    }
+            window.location.href = "/course_exit_analysis";
+        }
 
-        // Placeholder for fetchStudentName (to be implemented if needed)
         function fetchStudentName(rollNo, row) {
-            // Implement this function to fetch student name based on roll number
             console.log(`Fetching name for Roll No: ${rollNo}`);
-            row.querySelector(".student_name").value = `Student_${rollNo}`; // Example
+            row.querySelector(".student_name").value = `Student_${rollNo}`;
+        }
+
+        // New function to expose data
+        function getDirectAssessmentData() {
+            const percExt = document.getElementById("perc1").value.replace('%', '') || '0';
+            const percInt = document.getElementById("perc2").value.replace('%', '') || '0';
+            return {
+                total_ext_percentage: parseFloat(percExt),
+                total_int_percentage: parseFloat(percInt),
+                total_ext_attainment: getAttainmentLevel(parseFloat(percExt)),
+                total_int_attainment: getAttainmentLevel(parseFloat(percInt))
+            };
+        }
+
+        // Add event listener to serve data
+        window.addEventListener('load', () => {
+            if (window.location.pathname.includes('direct_assessment')) {
+                fetch('/get_direct_summary', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data) updateSummary(data);
+                    });
+            }
+        });
+
+        // Add attainment level function
+        function getAttainmentLevel(percentage) {
+            if (percentage >= 75) return 3;
+            else if (percentage >= 50) return 2;
+            else return 1;
         }
     </script>
 </body>
-
 </html>
