@@ -210,7 +210,7 @@
             <button class="add-btn" onclick="addRow()">Add Row</button>
             <button class="save-btn" onclick="saveData()">Save</button>
             <button class="view-btn" onclick="viewData()">View</button>
-            <button class="next-btn" onclick="students_analysis()">Next</button>
+            <button class="next-btn" onclick="course_exit_analysis()">Next</button>
         </div>
 
 
@@ -680,9 +680,10 @@
             }
         }
 
-        function students_analysis() {
-            window.location.href = "/students_analysis";
-        }
+        
+        function course_exit_analysis() {
+      window.location.href = "/course_exit_analysis";
+    }
 
         // Placeholder for fetchStudentName (to be implemented if needed)
         function fetchStudentName(rollNo, row) {
