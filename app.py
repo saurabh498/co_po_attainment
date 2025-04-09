@@ -791,31 +791,35 @@ def delete_marks():
 @app.route('/get_direct_summary', methods=['GET'])
 def get_direct_summary():
     try:
-        # Fetch the latest AssessmentSummary
         latest_summary = AssessmentSummary.query.order_by(AssessmentSummary.timestamp.desc()).first()
         if not latest_summary:
             return jsonify({
                 'error': 'No summary data available',
-                'perc1': '0',  # Total Ext %
-                'perc2': '0'   # Total Int %
+                'perc1': '0',
+                'perc2': '0'
             }), 404
 
-        # Calculate Total Ext and Total Int percentages
-        # Assuming max_ext_marks and max_int_marks are averages or totals; adjust if they represent something else
-        total_ext_percentage = (latest_summary.max_ext_marks / 80) * 100 if latest_summary.max_ext_marks else 0
-        total_int_percentage = (latest_summary.max_int_marks / 20) * 100 if latest_summary.max_int_marks else 0
+        # Match HTML's updateSummary() logic
+        assessments = DirectAssessment.query.all()
+        if not assessments:
+            return jsonify({'perc1': '0', 'perc2': '0'}), 200
+
+        ext_sum = sum(a.total_ext for a in assessments)
+        int_sum = sum(a.total_int for a in assessments)
+        valid_students = len(assessments)
+        perc1 = (ext_sum / (80 * valid_students)) * 100
+        perc2 = (int_sum / (20 * valid_students)) * 100
 
         return jsonify({
-            'perc1': f'{total_ext_percentage:.2f}',  # Total Ext % (e.g., 58.00 from image)
-            'perc2': f'{total_int_percentage:.2f}'   # Total Int % (e.g., 98.05 from image)
+            'perc1': f'{perc1:.2f}',
+            'perc2': f'{perc2:.2f}'
         }), 200
-
     except Exception as e:
         return jsonify({"message": f"Error fetching summary data: {str(e)}"}), 500
 
-@app.route('/course_exit_analysis')
-def course_exit_analysis():
-    return render_template('course_exit_analysis.html')  # Your new HTML file
+@app.route('/Indirect_assesment')
+def Indirect_assesment():
+    return render_template('Indirect_assesment.html')  # Your new HTML file
 
 # Upload CSV (validate and return data for display, no saving yet)
 @app.route('/upload_csv', methods=['POST'])
@@ -1088,7 +1092,38 @@ def delete_analysis(roll_no):
 def co_attainment_cal():
     return render_template('co_attainment_cal.html')  # Or the appropriate template
 
+@app.route('/get_final_attainment', methods=['GET'])
+def get_final_attainment():
+    try:
+        # Fetch latest direct and indirect summaries
+        direct_summary = AssessmentSummary.query.order_by(AssessmentSummary.timestamp.desc()).first()
+        indirect_summary = CourseAnalysis.query.order_by(CourseAnalysis.timestamp.desc()).first()
 
+        if not direct_summary or not indirect_summary:
+            return jsonify({"error": "No summary data available"}), 404
+
+        # Example: Calculate final attainment (simplified, match with Co_Attainment_Cal.html logic)
+        attainments = {
+            "CSC305.1": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co1),
+            "CSC305.2": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co2),
+            "CSC305.3": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co3),
+            "CSC305.4": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co4),
+            "CSC305.5": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co5),
+            "CSC305.6": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co6)
+        }
+
+        return jsonify({"attainments": attainments}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def get_attainment_level(percentage):
+    # Match the logic from Co_Attainment_Cal.html
+    percentage = float(percentage)
+    if percentage >= 75:
+        return 3
+    elif percentage >= 50:
+        return 2
+    return 1
 
 
 
@@ -1107,6 +1142,11 @@ def newfile():
         return render_template('newfile.html')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

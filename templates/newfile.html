@@ -47,12 +47,12 @@
       </tr>
     </thead>
     <tbody>
-      <tr><td>CSC305.1</td><td><input type="number" step="0.01" value="2.18"></td><td>2.20</td><td>0.0</td></tr>
-      <tr><td>CSC305.2</td><td><input type="number" step="0.01" value="2.10"></td><td>2.20</td><td>0.1</td></tr>
-      <tr><td>CSC305.3</td><td><input type="number" step="0.01" value="2.00"></td><td>2.20</td><td>0.2</td></tr>
-      <tr><td>CSC305.4</td><td><input type="number" step="0.01" value="2.00"></td><td>2.20</td><td>0.2</td></tr>
-      <tr><td>CSC305.5</td><td><input type="number" step="0.01" value="1.82"></td><td>2.20</td><td>0.4</td></tr>
-      <tr><td>CSC305.6</td><td><input type="number" step="0.01" value="1.82"></td><td>2.20</td><td>0.4</td></tr>
+      <tr><td>CSC305.1</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>CSC305.2</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>CSC305.3</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>CSC305.4</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>CSC305.5</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>CSC305.6</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
     </tbody>
   </table>
 
@@ -97,6 +97,61 @@
       }
     });
 
+    async function fetchAndUpdateData() {
+      try {
+        const response = await fetch('/get_final_attainment'); // New endpoint to fetch final attainment
+        const data = await response.json();
+
+        if (data && data.attainments) {
+          const tableRows = document.querySelectorAll("#attainment-table tbody tr");
+          const attData = [];
+          const colors = [];
+
+          tableRows.forEach((row, index) => {
+            const co = courseOutcomes[index];
+            const attainment = parseFloat(data.attainments[co]) || 0;
+            const target = parseFloat(row.cells[2].textContent);
+            const gap = (target - attainment).toFixed(1);
+
+            const input = row.cells[1].querySelector('input');
+            input.value = attainment.toFixed(2); // Set fetched attainment
+
+            row.cells[3].textContent = gap; // Calculate and update gap
+
+            // Color coding based on attainment
+            if (attainment >= 2.0) {
+              input.style.backgroundColor = "#d4edda";
+              colors.push("#28a745");
+            } else if (attainment >= 1.8) {
+              input.style.backgroundColor = "#fff3cd";
+              colors.push("#ffc107");
+            } else {
+              input.style.backgroundColor = "#f8d7da";
+              colors.push("#dc3545");
+            }
+
+            attData.push(attainment);
+          });
+
+          chart.data.datasets[0].data = attData;
+          chart.data.datasets[0].backgroundColor = colors;
+          chart.update();
+        } else {
+          console.warn('No attainment data received');
+        }
+      } catch (error) {
+        console.error('Error fetching attainment data:', error);
+      }
+    }
+
+    // Initialize with fetched data
+    document.addEventListener('DOMContentLoaded', fetchAndUpdateData);
+
+    // Optional: Allow manual updates if needed (though inputs are readonly)
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+      input.addEventListener('input', updateChartAndTable);
+    });
+
     function updateChartAndTable() {
       const tableRows = document.querySelectorAll("#attainment-table tbody tr");
       const attData = [];
@@ -128,13 +183,6 @@
       chart.data.datasets[0].backgroundColor = colors;
       chart.update();
     }
-
-    // Initialize
-    updateChartAndTable();
-
-    document.querySelectorAll('input[type="number"]').forEach(input => {
-      input.addEventListener('input', updateChartAndTable);
-    });
   </script>
 </body>
 </html>

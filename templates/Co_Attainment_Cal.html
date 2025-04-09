@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,10 +13,12 @@
             margin: 0;
             padding: 0;
         }
+
         h2 {
             color: #333;
             margin-top: 20px;
         }
+
         .container {
             width: 90%;
             max-width: 900px;
@@ -25,6 +28,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -34,27 +38,34 @@
             overflow: hidden;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: center;
         }
+
         th {
             background-color: #007bff;
             color: white;
         }
+
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+
         tr:hover {
             background-color: #e8f0ff;
         }
+
         .buttons {
             display: flex;
             justify-content: center;
             gap: 10px;
             margin-top: 20px;
         }
+
         button {
             padding: 10px 15px;
             border: none;
@@ -63,28 +74,238 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+
         .calculate-btn {
             background: #28a745;
             color: white;
         }
+
         .reset-btn {
             background: #dc3545;
             color: white;
         }
+
+        .next-btn {
+            background: #007bff;
+            color: white;
+        }
+
         button:hover {
             opacity: 0.8;
             transform: scale(1.05);
         }
-        .attainment-3 { background-color: #28a745; color: white; } /* Green for Level 3 (≥75 or ≥85) */
-        .attainment-2 { background-color: #ffc107; color: black; } /* Yellow for Level 2 (50-74 or 80-85) */
-        .attainment-1 { background-color: #dc3545; color: white; } /* Red for Level 1 (<50 or <80) */
-        .final-attainment { font-weight: bold; }
+
+        .attainment-3 {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .attainment-2 {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .attainment-1 {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .final-attainment {
+            font-weight: bold;
+        }
+
+        .table-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        input[type="text"] {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h2>Course Outcome Attainment Calculation</h2>
+        <table>
+            <h2>Course Outcome Attainment Calculation</h2>
+            <caption>A. Level of Attainments</caption>
+            <thead>
+                <tr>
+                    <th rowspan="2">Level</th>
+                    <th colspan="2">SEE (%)</th>
+                    <th colspan="2">CIE (%)</th>
+                    <th colspan="2">CES</th>
+                </tr>
+                <tr>
+                    <th class="highlight">></th>
+                    <th class="highlight"><=</th>
+                    <th class="highlight">></th>
+                    <th class="highlight"><=</th>
+                    <th class="highlight">></th>
+                    <th class="highlight"><=</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="highlight">1</td>
+                    <td class="highlight">10</td>
+                    <td class="highlight">49</td>
+                    <td class="highlight">10</td>
+                    <td class="highlight">49</td>
+                    <td class="highlight">75</td>
+                    <td class="highlight">80</td>
+                </tr>
+                <tr>
+                    <td class="highlight">2</td>
+                    <td class="highlight">50</td>
+                    <td class="highlight">74</td>
+                    <td class="highlight">50</td>
+                    <td class="highlight">74</td>
+                    <td class="highlight">80</td>
+                    <td class="highlight">85</td>
+                </tr>
+                <tr>
+                    <td class="highlight">3</td>
+                    <td class="highlight">75</td>
+                    <td class="highlight">100</td>
+                    <td class="highlight">75</td>
+                    <td class="highlight">100</td>
+                    <td class="highlight">85</td>
+                    <td class="highlight">100</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container">
+        <table>
+            <h3>B. Direct / Indirect Attainment Calculation by SEE, CIE and CES</h3>
+            <caption>SEE (Direct Attainment)</caption>
+            <tr>
+                <th>Course</th>
+                <th>SEE (%)</th>
+                <th>Atn (X)</th>
+            </tr>
+            <tr>
+                <td>CSC305.1</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.2</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.3</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.4</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.5</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.6</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+        </table>
+
+        <table>
+            <caption>CIE (Direct Attainment)</caption>
+            <tr>
+                <th>Course</th>
+                <th>UT AVG</th>
+                <th>Atn (Y)</th>
+            </tr>
+            <tr>
+                <td>CSC305.1</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.2</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.3</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.4</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.5</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.6</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+        </table>
+
+        <table>
+            <caption>CES (Indirect Attainment)</caption>
+            <tr>
+                <th>Course</th>
+                <th>AVG</th>
+                <th>Atn (Z)</th>
+            </tr>
+            <tr>
+                <td>CSC305.1</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.2</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.3</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.4</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.5</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+            <tr>
+                <td>CSC305.6</td>
+                <td><input type="text" /></td>
+                <td><input type="text" /></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="container">
         <table id="attainmentTable">
+            <caption>D. Final Course Outcome Attainment Calculation: 0.9(0.8X+0.2Y)+0.1(Z)</caption>
             <thead>
                 <tr>
                     <th>Course Outcome</th>
@@ -143,44 +364,96 @@
         <div class="buttons">
             <button class="calculate-btn" onclick="calculateFinalAttainment()">Calculate Final Mapping</button>
             <button class="reset-btn" onclick="resetTable()">Reset Table</button>
+            <button class="next-btn" onclick="newfile()">Next Page</button>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchAttainmentData();
+        document.addEventListener('DOMContentLoaded', async () => {
+            initializeInputs();
+            await fetchAndDisplayData();
         });
 
-        function fetchAttainmentData() {
-            Promise.all([
-                fetch('/get_direct_summary').then(res => res.json()),
-                fetch('/get_indirect_summary').then(res => res.json())
-            ])
-            .then(([directData, indirectData]) => {
-                displayInitialAttainment(directData, indirectData);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+        function initializeInputs() {
+            const inputs = document.querySelectorAll('input[type="text"]');
+            inputs.forEach(input => {
+                input.addEventListener('change', updateAttainment);
+            });
         }
 
-        function getAttainmentLevel(percentage) {
-            if (percentage >= 75) return 3;  // Level 3 for Total Ext/Int
-            else if (percentage >= 50) return 2;  // Level 2 for Total Ext/Int
-            else return 1;  // Level 1 for Total Ext/Int
+        function updateAttainment(event) {
+            const input = event.target;
+            const row = input.closest('tr');
+            const percentage = parseFloat(input.value) || 0;
+            const attainmentCell = row.cells[2].querySelector('input');
+            const caption = input.closest('table').querySelector('caption').textContent;
+            const attainmentLevel = getAttainmentLevel(percentage, caption);
+            attainmentCell.value = attainmentLevel;
+        }
 
-            // For Wt.Avg Max Percentage (CEA)
-            if (percentage >= 85) return 3;  // Level 3 for CEA
-            else if (percentage >= 80 && percentage < 85) return 2;  // Level 2 for CEA
-            else return 1;  // Level 1 for CEA
+        function getAttainmentLevel(percentage, context) {
+            if (context.includes('CES')) {
+                if (percentage >= 85) return 3;
+                if (percentage >= 80) return 2;
+                return 1;
+            } else {
+                if (percentage >= 75) return 3;
+                if (percentage >= 50) return 2;
+                return 1;
+            }
+        }
+
+        async function fetchAndDisplayData() {
+            try {
+                const [directResponse, indirectResponse] = await Promise.all([
+                    fetch('/get_direct_summary'),
+                    fetch('/get_indirect_summary')
+                ]);
+                const directData = await directResponse.json();
+                const indirectData = await indirectResponse.json();
+
+                if (directData.perc1 && directData.perc2 && indirectData.wtAvgCO1) {
+                    fetchAttainmentData(directData);
+                    fetchIndirectData(indirectData);
+                    displayInitialAttainment(directData, indirectData);
+                } else {
+                    console.warn('Incomplete data received from backend');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        async function fetchAttainmentData(data) {
+            if (data.perc1 && data.perc2 && !isNaN(data.perc1) && !isNaN(data.perc2)) {
+                const tables = document.querySelectorAll('table');
+                const seeTable = tables[1]; // Second table (SEE)
+                const cieTable = tables[2]; // Third table (CIE)
+                const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+                courses.forEach((co, index) => {
+                    seeTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data.perc1;
+                    cieTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data.perc2;
+                    updateAttainment({ target: seeTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input') });
+                    updateAttainment({ target: cieTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input') });
+                });
+            }
+        }
+
+        async function fetchIndirectData(data) {
+            if (data.wtAvgCO1 && !isNaN(data.wtAvgCO1)) {
+                const tables = document.querySelectorAll('table');
+                const cesTable = tables[3]; // Fourth table (CES)
+                const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+                courses.forEach((co, index) => {
+                    cesTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data[`wtAvgCO${index + 1}`];
+                    updateAttainment({ target: cesTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input') });
+                });
+            }
         }
 
         function displayInitialAttainment(directData, indirectData) {
-            // Direct Assessment Data (Total Ext and Total Int percentages)
             const totalExtPercentage = parseFloat(directData.perc1) || 0;
             const totalIntPercentage = parseFloat(directData.perc2) || 0;
-            const totalExtAttainment = getAttainmentLevel(totalExtPercentage);
-            const totalIntAttainment = getAttainmentLevel(totalIntPercentage);
-
-            // Indirect Assessment Data (Wt.Avg Max Percentages)
             const wtAvgPercentages = {
                 co1: parseFloat(indirectData.wtAvgCO1) || 0,
                 co2: parseFloat(indirectData.wtAvgCO2) || 0,
@@ -189,16 +462,7 @@
                 co5: parseFloat(indirectData.wtAvgCO5) || 0,
                 co6: parseFloat(indirectData.wtAvgCO6) || 0
             };
-            const wtAvgAttainments = {
-                co1: getAttainmentLevel(wtAvgPercentages.co1),  // Use CEA range for indirect
-                co2: getAttainmentLevel(wtAvgPercentages.co2),
-                co3: getAttainmentLevel(wtAvgPercentages.co3),
-                co4: getAttainmentLevel(wtAvgPercentages.co4),
-                co5: getAttainmentLevel(wtAvgPercentages.co5),
-                co6: getAttainmentLevel(wtAvgPercentages.co6)
-            };
 
-            // Map to table with percentage and attainment in parentheses
             const mappings = {
                 'CSC305.1': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co1 },
                 'CSC305.2': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co2 },
@@ -209,82 +473,69 @@
             };
 
             Object.keys(mappings).forEach(co => {
-                const totalExtAttn = getAttainmentLevel(mappings[co].totalExt);
-                const totalIntAttn = getAttainmentLevel(mappings[co].totalInt);
-                const wtAvgAttn = wtAvgAttainments[`co${co.split('.')[1]}`];
-                const totalExtCell = document.getElementById(`totalExt${co}`);
-                const totalIntCell = document.getElementById(`totalInt${co}`);
-                const wtAvgCell = document.getElementById(`wtAvg${co}`);
-                totalExtCell.textContent = `${mappings[co].totalExt.toFixed(2)}% (${totalExtAttn})`;
-                totalExtCell.className = `attainment-${totalExtAttn}`;
-                totalIntCell.textContent = `${mappings[co].totalInt.toFixed(2)}% (${totalIntAttn})`;
-                totalIntCell.className = `attainment-${totalIntAttn}`;
-                wtAvgCell.textContent = `${mappings[co].wtAvg.toFixed(2)}% (${wtAvgAttn})`;
-                wtAvgCell.className = `attainment-${wtAvgAttn}`;
+                const totalExtAttn = getAttainmentLevel(mappings[co].totalExt, 'SEE');
+                const totalIntAttn = getAttainmentLevel(mappings[co].totalInt, 'CIE');
+                const wtAvgAttn = getAttainmentLevel(mappings[co].wtAvg, 'CES');
+
+                document.getElementById(`totalExt${co}`).textContent = `${mappings[co].totalExt.toFixed(2)}% (${totalExtAttn})`;
+                document.getElementById(`totalExt${co}`).className = `attainment-${totalExtAttn}`;
+                document.getElementById(`totalInt${co}`).textContent = `${mappings[co].totalInt.toFixed(2)}% (${totalIntAttn})`;
+                document.getElementById(`totalInt${co}`).className = `attainment-${totalIntAttn}`;
+                document.getElementById(`wtAvg${co}`).textContent = `${mappings[co].wtAvg.toFixed(2)}% (${wtAvgAttn})`;
+                document.getElementById(`wtAvg${co}`).className = `attainment-${wtAvgAttn}`;
             });
         }
 
         function calculateFinalAttainment() {
-            const mappings = {
-                'CSC305.1': { 
-                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.1').textContent) || 0),
-                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.1').textContent) || 0),
-                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.1').textContent) || 0)
-                },
-                'CSC305.2': { 
-                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.2').textContent) || 0),
-                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.2').textContent) || 0),
-                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.2').textContent) || 0)
-                },
-                'CSC305.3': { 
-                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.3').textContent) || 0),
-                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.3').textContent) || 0),
-                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.3').textContent) || 0)
-                },
-                'CSC305.4': { 
-                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.4').textContent) || 0),
-                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.4').textContent) || 0),
-                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.4').textContent) || 0)
-                },
-                'CSC305.5': { 
-                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.5').textContent) || 0),
-                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.5').textContent) || 0),
-                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.5').textContent) || 0)
-                },
-                'CSC305.6': { 
-                    seeAttn: getAttainmentLevel(parseFloat(document.getElementById('totalExtCSC305.6').textContent) || 0),
-                    cieAttn: getAttainmentLevel(parseFloat(document.getElementById('totalIntCSC305.6').textContent) || 0),
-                    cesAttn: getAttainmentLevel(parseFloat(document.getElementById('wtAvgCSC305.6').textContent) || 0)
-                }
-            };
+            const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+            const tables = document.querySelectorAll('table');
+            const seeTable = tables[1]; // SEE
+            const cieTable = tables[2]; // CIE
+            const cesTable = tables[3]; // CES
 
-            Object.keys(mappings).forEach(co => {
-                const directComponent = (0.8 * mappings[co].seeAttn) + (0.2 * mappings[co].cieAttn);
-                const finalAttn = (0.9 * directComponent) + (0.1 * mappings[co].cesAttn);
+            courses.forEach(co => {
+                const seeRow = Array.from(seeTable.querySelectorAll('tr')).find(row => row.cells[0].textContent === co);
+                const cieRow = Array.from(cieTable.querySelectorAll('tr')).find(row => row.cells[0].textContent === co);
+                const cesRow = Array.from(cesTable.querySelectorAll('tr')).find(row => row.cells[0].textContent === co);
+
+                const seeAttn = parseFloat(seeRow.cells[2].querySelector('input').value) || 0;
+                const cieAttn = parseFloat(cieRow.cells[2].querySelector('input').value) || 0;
+                const cesAttn = parseFloat(cesRow.cells[2].querySelector('input').value) || 0;
+
+                const directComponent = 0.8 * seeAttn + 0.2 * cieAttn;
+                const finalAttn = 0.9 * directComponent + 0.1 * cesAttn;
                 const finalCell = document.getElementById(`final${co}`);
+
                 finalCell.textContent = finalAttn.toFixed(2);
-                // Color coding based on final attainment (e.g., >2.0 for green, ≥1.0 for yellow, <1.0 for red)
-                if (finalAttn > 2.0) finalCell.classList.add('attainment-3');
-                else if (finalAttn >= 1.0) finalCell.classList.add('attainment-2');
+                finalCell.className = 'final-attainment';
+                if (finalAttn >= 2.5) finalCell.classList.add('attainment-3');
+                else if (finalAttn >= 1.5) finalCell.classList.add('attainment-2');
                 else finalCell.classList.add('attainment-1');
             });
             alert("Final Attainment Calculated Successfully!");
         }
 
         function resetTable() {
+            const inputs = document.querySelectorAll('input[type="text"]');
+            inputs.forEach(input => input.value = '');
+
             const cells = document.querySelectorAll('#attainmentTable td');
             cells.forEach(cell => {
                 cell.textContent = '-';
-                cell.className = ''; // Remove any attainment classes
+                cell.className = '';
             });
-            document.getElementById('finalCSC305.1').className = 'final-attainment';
-            document.getElementById('finalCSC305.2').className = 'final-attainment';
-            document.getElementById('finalCSC305.3').className = 'final-attainment';
-            document.getElementById('finalCSC305.4').className = 'final-attainment';
-            document.getElementById('finalCSC305.5').className = 'final-attainment';
-            document.getElementById('finalCSC305.6').className = 'final-attainment';
-            fetchAttainmentData(); // Reload data
-            alert("Table reset and data reloaded!");
+
+            const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+            courses.forEach(co => {
+                document.getElementById(`final${co}`).className = 'final-attainment';
+            });
+
+            alert("Table reset successfully!");
+        }
+
+        function newfile() {
+            // Redirect to the next page (adjust the URL based on your routes)
+            window.location.href = '/newfile'; // Example: Go to direct assessment page
         }
     </script>
 </body>
