@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Program Outcome Attainment</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1000px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      z-index: 2;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    td[contenteditable="true"] {
+      background-color: #fafafa;
+      cursor: text;
+    }
+
+    .button-container {
+      text-align: center;
+      margin-top: 25px;
+    }
+
+    button {
+      padding: 10px 25px;
+      font-size: 16px;
+      margin: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #saveBtn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    #saveBtn:hover {
+      background-color: #218838;
+    }
+
+    .next-btn {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .next-btn:hover {
+      background-color: #0056b3;
+    }
+
+    #message {
+      text-align: center;
+      font-size: 16px;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+
+    @media screen and (max-width: 768px) {
+      table {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Program Outcome Attainment</h2>
+
+  <div class="table-container">
+    <table id="poTable">
+      <thead>
+        <tr>
+          <th></th>
+          <th>PO1</th><th>PO2</th><th>PO3</th><th>PO4</th><th>PO5</th><th>PO6</th><th>PO7</th>
+          <th>PO8</th><th>PO9</th><th>PO10</th><th>PO11</th><th>PO12</th>
+          <th>PSO1</th><th>PSO2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Your rows stay unchanged -->
+        <tr><td>CSC305.1</td><td contenteditable="true">2.2</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td></tr>
+        <tr><td>CSC305.2</td><td contenteditable="true">2.1</td><td contenteditable="true">2.1</td><td contenteditable="true">2.1</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">2.1</td></tr>
+        <tr><td>CSC305.3</td><td contenteditable="true">2.0</td><td contenteditable="true">2.0</td><td contenteditable="true">2.0</td><td contenteditable="true">2.0</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">2.0</td></tr>
+        <tr><td>CSC305.4</td><td contenteditable="true">2.0</td><td contenteditable="true">2.0</td><td contenteditable="true">2.0</td><td contenteditable="true">2.0</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">2.0</td></tr>
+        <tr><td>CSC305.5</td><td contenteditable="true">1.8</td><td contenteditable="true">1.8</td><td contenteditable="true">1.8</td><td contenteditable="true">1.8</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">1.8</td></tr>
+        <tr><td>CSC305.6</td><td contenteditable="true">1.8</td><td contenteditable="true">1.8</td><td contenteditable="true">1.8</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">NA</td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">1.8</td></tr>
+        <tr><td><strong>Avg Attainment</strong></td><td contenteditable="true">2.0</td><td contenteditable="true">1.9</td><td contenteditable="true">1.9</td><td contenteditable="true">2.0</td><td colspan="7"></td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">2.0</td></tr>
+        <tr><td><strong>Mapping Strength</strong></td><td contenteditable="true">3.0</td><td contenteditable="true">3.0</td><td contenteditable="true">3.0</td><td contenteditable="true">3.0</td><td colspan="7"></td><td contenteditable="true">3.0</td><td contenteditable="true">3.0</td><td contenteditable="true">3.0</td></tr>
+        <tr><td><strong>PO Attainment</strong></td><td contenteditable="true">2.0</td><td contenteditable="true">1.9</td><td contenteditable="true">1.9</td><td contenteditable="true">1.3</td><td colspan="7"></td><td contenteditable="true">2.2</td><td contenteditable="true">2.2</td><td contenteditable="true">2.0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="button-container">
+    <button id="saveBtn">Save</button>
+    <button class="next-btn" onclick="co_achievement()">Next</button>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    document.getElementById("saveBtn").addEventListener("click", function () {
+      const table = document.getElementById("poTable");
+      const rows = table.querySelectorAll("tbody tr");
+      const tableData = [];
+
+      rows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll("td").forEach(cell => {
+          rowData.push(cell.innerText.trim());
+        });
+        tableData.push(rowData);
+      });
+
+      fetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableData })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const message = document.getElementById("message");
+        message.style.color = "green";
+        message.textContent = data.message || "Data saved successfully!";
+      })
+      .catch(err => {
+        const message = document.getElementById("message");
+        message.style.color = "red";
+        message.textContent = "Error saving data!";
+      });
+    });
+
+    function co_achievement() {
+      window.location.href = "/co_achievement";
+    }
+  </script>
+
+</body>
+</html>

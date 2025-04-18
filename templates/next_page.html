@@ -32,6 +32,7 @@
 
         <div class="text-center mt-4">
             <button class="btn btn-primary" onclick="submitStudents()">Submit</button>
+            <button class="btn btn-info" onclick="cgpa_calculation()">Next</button>
         </div>
 
         <div class="mb-3">
@@ -115,18 +116,58 @@
                     data.students.forEach(student => {
                         let row = document.createElement("tr");
                         row.innerHTML = `
-                        <td>${student.roll_no}</td>
-                        <td>${student.full_name}</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm" onclick="selectStudent('${student.roll_no}', '${student.full_name}')">Select</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteStudent('${student.roll_no}')">Delete</button>
-                        </td>
-                    `;
+                    <td>${student.roll_no}</td>
+                    <td><span class="student-name">${student.full_name}</span>
+                        <input type="text" class="form-control d-none edit-name-input" value="${student.full_name}">
+                    </td>
+                    <td>
+                        <button class="btn btn-warning btn-sm me-1" onclick="toggleEdit(this, '${student.roll_no}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${student.roll_no}')">Delete</button>
+                    </td>
+                `;
                         studentList.appendChild(row);
                     });
                 })
                 .catch(error => console.error("Error fetching students:", error));
         }
+        
+        function toggleEdit(button, rollNo) {
+            let row = button.closest("tr");
+            let nameSpan = row.querySelector(".student-name");
+            let input = row.querySelector(".edit-name-input");
+
+            if (button.textContent === "Edit") {
+                nameSpan.classList.add("d-none");
+                input.classList.remove("d-none");
+                button.textContent = "Save";
+            } else {
+                let newName = input.value.trim();
+                if (!newName) {
+                    showAlert("Name cannot be empty!", "warning");
+                    return;
+                }
+
+                fetch("/update_student", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ roll_no: rollNo, full_name: newName })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        nameSpan.textContent = newName;
+                        input.value = newName;
+                        nameSpan.classList.remove("d-none");
+                        input.classList.add("d-none");
+                        button.textContent = "Edit";
+                        showAlert(data.message || "Student updated!", "success");
+                    })
+                    .catch(error => {
+                        console.error("Error updating student:", error);
+                        showAlert("Error updating student!", "danger");
+                    });
+            }
+        }
+
 
 
         function deleteStudent(rollNo) {
@@ -153,11 +194,7 @@
                 });
         }
 
-        function selectStudent(rollNo, fullName) {
-            sessionStorage.setItem("selected_roll_no", rollNo);
-            sessionStorage.setItem("selected_name", fullName);
-            window.location.href = "/cgpa_calculation?roll_no=" + encodeURIComponent(rollNo);
-        }
+
 
         function showAlert(message, type) {
             let alertBox = document.getElementById("alert-box");
@@ -212,6 +249,13 @@
 
             reader.readAsText(file);
         });
+
+
+        function cgpa_calculation() {
+            // Redirect to the next page
+            window.location.href = "/cgpa_calculation";  // Replace with your actual route
+        }
+
 
     </script>
 </body>

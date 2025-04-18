@@ -9,29 +9,62 @@
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
+      background-color: #f4f4f9;
     }
     h2 {
       text-align: center;
+      color: #333;
     }
     table {
       width: 80%;
       margin: 20px auto;
       border-collapse: collapse;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
     table, th, td {
-      border: 1px solid #333;
+      border: 1px solid #ddd;
     }
     th, td {
       padding: 10px;
       text-align: center;
     }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
     input[type="number"] {
       width: 80px;
       text-align: center;
+      padding: 5px;
+      border: none;
     }
     canvas {
       display: block;
       margin: 40px auto;
+      max-width: 800px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .reset-btn {
+      background: #dc3545;
+      color: white;
+    }
+    button:hover {
+      opacity: 0.8;
+      transform: scale(1.05);
     }
   </style>
 </head>
@@ -57,6 +90,11 @@
   </table>
 
   <canvas id="attainmentChart" width="800" height="400"></canvas>
+
+  <div class="buttons">
+    <button class="reset-btn" onclick="resetChartAndTable()">Reset</button>
+    <button class="next-btn" onclick="Po_Attainment_Cal()">Next</button>
+  </div>
 
   <script>
     const ctx = document.getElementById('attainmentChart').getContext('2d');
@@ -85,13 +123,23 @@
         plugins: {
           title: {
             display: true,
-            text: 'CO Attainment - Target'
+            text: 'CO Attainment vs Target'
           }
         },
         scales: {
           y: {
             beginAtZero: true,
-            max: 2.5
+            max: 3.0,
+            title: {
+              display: true,
+              text: 'Attainment Level'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Course Outcomes'
+            }
           }
         }
       }
@@ -99,8 +147,12 @@
 
     async function fetchAndUpdateData() {
       try {
-        const response = await fetch('/get_final_attainment'); // New endpoint to fetch final attainment
+        const response = await fetch('/get_final_attainment');
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const data = await response.json();
+        console.log('Fetched data:', data);
 
         if (data && data.attainments) {
           const tableRows = document.querySelectorAll("#attainment-table tbody tr");
@@ -111,23 +163,21 @@
             const co = courseOutcomes[index];
             const attainment = parseFloat(data.attainments[co]) || 0;
             const target = parseFloat(row.cells[2].textContent);
-            const gap = (target - attainment).toFixed(1);
+            const gap = (target - attainment).toFixed(2);
 
             const input = row.cells[1].querySelector('input');
-            input.value = attainment.toFixed(2); // Set fetched attainment
+            input.value = attainment.toFixed(2);
+            row.cells[3].textContent = gap;
 
-            row.cells[3].textContent = gap; // Calculate and update gap
-
-            // Color coding based on attainment
             if (attainment >= 2.0) {
               input.style.backgroundColor = "#d4edda";
-              colors.push("#28a745");
+              colors.push("#28a745"); // Green
             } else if (attainment >= 1.8) {
               input.style.backgroundColor = "#fff3cd";
-              colors.push("#ffc107");
+              colors.push("#ffc107"); // Yellow
             } else {
               input.style.backgroundColor = "#f8d7da";
-              colors.push("#dc3545");
+              colors.push("#dc3545"); // Red
             }
 
             attData.push(attainment);
@@ -138,51 +188,37 @@
           chart.update();
         } else {
           console.warn('No attainment data received');
+          alert('No attainment data available. Please calculate attainment first.');
         }
       } catch (error) {
         console.error('Error fetching attainment data:', error);
+        alert('Failed to fetch attainment data: ' + error.message);
       }
+    }
+
+    function resetChartAndTable() {
+      const tableRows = document.querySelectorAll("#attainment-table tbody tr");
+      tableRows.forEach(row => {
+        const input = row.cells[1].querySelector('input');
+        input.value = '';
+        input.style.backgroundColor = '';
+        row.cells[3].textContent = '0.0';
+      });
+
+      chart.data.datasets[0].data = [];
+      chart.data.datasets[0].backgroundColor = [];
+      chart.update();
+      alert('Chart and table reset successfully!');
     }
 
     // Initialize with fetched data
     document.addEventListener('DOMContentLoaded', fetchAndUpdateData);
 
-    // Optional: Allow manual updates if needed (though inputs are readonly)
-    document.querySelectorAll('input[type="number"]').forEach(input => {
-      input.addEventListener('input', updateChartAndTable);
-    });
 
-    function updateChartAndTable() {
-      const tableRows = document.querySelectorAll("#attainment-table tbody tr");
-      const attData = [];
-      const colors = [];
-
-      tableRows.forEach((row, index) => {
-        const input = row.cells[1].querySelector('input');
-        const attainment = parseFloat(input.value);
-        const target = parseFloat(row.cells[2].textContent);
-        const gap = (target - attainment).toFixed(1);
-
-        row.cells[3].textContent = gap;
-
-        if (attainment >= 2.0) {
-          input.style.backgroundColor = "#d4edda";
-          colors.push("#28a745");
-        } else if (attainment >= 1.8) {
-          input.style.backgroundColor = "#fff3cd";
-          colors.push("#ffc107");
-        } else {
-          input.style.backgroundColor = "#f8d7da";
-          colors.push("#dc3545");
+    function Po_Attainment_Cal() {
+            window.location.href = "/Po_Attainment_Cal";
         }
 
-        attData.push(attainment);
-      });
-
-      chart.data.datasets[0].data = attData;
-      chart.data.datasets[0].backgroundColor = colors;
-      chart.update();
-    }
   </script>
 </body>
 </html>

@@ -85,6 +85,11 @@
             color: white;
         }
 
+        .save-btn {
+            background: #17a2b8;
+            color: white;
+        }
+
         .next-btn {
             background: #007bff;
             color: white;
@@ -144,11 +149,11 @@
                 </tr>
                 <tr>
                     <th class="highlight">></th>
-                    <th class="highlight"><=</th>
+                    <th class="highlight">&lt;=</th>
                     <th class="highlight">></th>
-                    <th class="highlight"><=</th>
+                    <th class="highlight">&lt;=</th>
                     <th class="highlight">></th>
-                    <th class="highlight"><=</th>
+                    <th class="highlight">&lt;=</th>
                 </tr>
             </thead>
             <tbody>
@@ -195,32 +200,32 @@
             <tr>
                 <td>CSC305.1</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.2</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.3</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.4</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.5</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.6</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
         </table>
 
@@ -234,32 +239,32 @@
             <tr>
                 <td>CSC305.1</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.2</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.3</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.4</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.5</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.6</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
         </table>
 
@@ -273,32 +278,32 @@
             <tr>
                 <td>CSC305.1</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.2</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.3</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.4</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.5</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.6</td>
                 <td><input type="text" /></td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
             </tr>
         </table>
     </div>
@@ -364,7 +369,8 @@
         <div class="buttons">
             <button class="calculate-btn" onclick="calculateFinalAttainment()">Calculate Final Mapping</button>
             <button class="reset-btn" onclick="resetTable()">Reset Table</button>
-            <button class="next-btn" onclick="newfile()">Next Page</button>
+            <button class="save-btn" onclick="save()">Save</button>
+            <button class="next-btn" onclick="co_achievement()">Next Page</button>
         </div>
     </div>
 
@@ -375,7 +381,7 @@
         });
 
         function initializeInputs() {
-            const inputs = document.querySelectorAll('input[type="text"]');
+            const inputs = document.querySelectorAll('input[type="text"]:not([readonly])');
             inputs.forEach(input => {
                 input.addEventListener('change', updateAttainment);
             });
@@ -406,8 +412,8 @@
         async function fetchAndDisplayData() {
             try {
                 const [directResponse, indirectResponse] = await Promise.all([
-                    fetch('/get_direct_summary'),
-                    fetch('/get_indirect_summary')
+                    fetch('/get_summary'),
+                    fetch('/get_indirect')
                 ]);
                 const directData = await directResponse.json();
                 const indirectData = await indirectResponse.json();
@@ -427,8 +433,8 @@
         async function fetchAttainmentData(data) {
             if (data.perc1 && data.perc2 && !isNaN(data.perc1) && !isNaN(data.perc2)) {
                 const tables = document.querySelectorAll('table');
-                const seeTable = tables[1]; // Second table (SEE)
-                const cieTable = tables[2]; // Third table (CIE)
+                const seeTable = tables[1];
+                const cieTable = tables[2];
                 const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
                 courses.forEach((co, index) => {
                     seeTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data.perc1;
@@ -442,7 +448,7 @@
         async function fetchIndirectData(data) {
             if (data.wtAvgCO1 && !isNaN(data.wtAvgCO1)) {
                 const tables = document.querySelectorAll('table');
-                const cesTable = tables[3]; // Fourth table (CES)
+                const cesTable = tables[3];
                 const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
                 courses.forEach((co, index) => {
                     cesTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data[`wtAvgCO${index + 1}`];
@@ -486,33 +492,100 @@
             });
         }
 
-        function calculateFinalAttainment() {
+        function save() {
             const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
             const tables = document.querySelectorAll('table');
-            const seeTable = tables[1]; // SEE
-            const cieTable = tables[2]; // CIE
-            const cesTable = tables[3]; // CES
+            const seeTable = tables[1];
+            const cieTable = tables[2];
+            const cesTable = tables[3];
 
-            courses.forEach(co => {
+            const savePromises = courses.map(co => {
                 const seeRow = Array.from(seeTable.querySelectorAll('tr')).find(row => row.cells[0].textContent === co);
                 const cieRow = Array.from(cieTable.querySelectorAll('tr')).find(row => row.cells[0].textContent === co);
                 const cesRow = Array.from(cesTable.querySelectorAll('tr')).find(row => row.cells[0].textContent === co);
 
-                const seeAttn = parseFloat(seeRow.cells[2].querySelector('input').value) || 0;
-                const cieAttn = parseFloat(cieRow.cells[2].querySelector('input').value) || 0;
-                const cesAttn = parseFloat(cesRow.cells[2].querySelector('input').value) || 0;
+                const data = {
+                    course: co,
+                    see_percentage: parseFloat(seeRow.cells[1].querySelector('input').value) || 0,
+                    cie_ut_avg: parseFloat(cieRow.cells[1].querySelector('input').value) || 0,
+                    ces_avg: parseFloat(cesRow.cells[1].querySelector('input').value) || 0
+                };
+                console.log(`Saving ${co}:`, data);
 
-                const directComponent = 0.8 * seeAttn + 0.2 * cieAttn;
-                const finalAttn = 0.9 * directComponent + 0.1 * cesAttn;
-                const finalCell = document.getElementById(`final${co}`);
-
-                finalCell.textContent = finalAttn.toFixed(2);
-                finalCell.className = 'final-attainment';
-                if (finalAttn >= 2.5) finalCell.classList.add('attainment-3');
-                else if (finalAttn >= 1.5) finalCell.classList.add('attainment-2');
-                else finalCell.classList.add('attainment-1');
+                return fetch('/save_attainment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Save failed for ${co}: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(result => {
+                        console.log(`Saved ${co}:`, result);
+                        return result;
+                    })
+                    .catch(error => {
+                        console.error(`Error saving ${co}:`, error);
+                        return { error: error.message };
+                    });
             });
-            alert("Final Attainment Calculated Successfully!");
+
+            return Promise.all(savePromises)
+                .then(results => {
+                    const errors = results.filter(r => r.error);
+                    if (errors.length > 0) {
+                        alert('Some data failed to save: ' + errors.map(e => e.error).join(', '));
+                    } else {
+                        alert('All data saved successfully!');
+                    }
+                    return results;
+                })
+                .catch(error => {
+                    console.error('Error during save:', error);
+                    alert('Failed to save data: ' + error.message);
+                    throw error;
+                });
+        }
+
+        function calculateFinalAttainment() {
+            save().then(() => {
+                fetch('/get_final_attainment')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Full response from /get_final_attainment:', JSON.stringify(data));
+                        if (data.error) {
+                            alert('Error: ' + data.error);
+                            return;
+                        }
+                        const attainments = data.attainments || {};
+                        console.log('Attainments:', attainments);
+                        const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+
+                        courses.forEach(co => {
+                            const finalAttn = attainments[co] || 0;
+                            console.log(`${co} final attainment: ${finalAttn}`);
+                            const finalCell = document.getElementById(`final${co}`);
+                            finalCell.textContent = finalAttn.toFixed(2);
+                            finalCell.className = 'final-attainment';
+                            if (finalAttn >= 2.5) finalCell.classList.add('attainment-3');
+                            else if (finalAttn >= 1.5) finalCell.classList.add('attainment-2');
+                            else finalCell.classList.add('attainment-1');
+                        });
+                        alert("Final Attainment Calculated Successfully!");
+                    })
+                    .catch(error => {
+                        console.error('Error fetching final attainment:', error);
+                        alert('Failed to calculate final attainment: ' + error.message);
+                    });
+            }).catch(error => {
+                console.error('Save failed before calculating:', error);
+            });
         }
 
         function resetTable() {
@@ -533,10 +606,10 @@
             alert("Table reset successfully!");
         }
 
-        function newfile() {
-            // Redirect to the next page (adjust the URL based on your routes)
-            window.location.href = '/newfile'; // Example: Go to direct assessment page
+        function co_achievement() {
+            window.location.href = '/co_achievement';
         }
     </script>
 </body>
+
 </html>

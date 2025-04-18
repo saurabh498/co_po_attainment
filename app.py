@@ -1,10 +1,12 @@
 import csv
+import io
 import json
 import datetime
 from io import StringIO
 from sqlite3 import Cursor
+import traceback
 from venv import logger
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, Response, make_response, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CursorResult
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -243,6 +245,29 @@ class StudentPerformance(db.Model):
     category = db.Column(db.String(20), nullable=False)  # Bright, Weak, Average
     observation = db.Column(db.String(255), nullable=False)
 
+# Define Models
+class DirectAttainment(db.Model):
+    __tablename__ = 'direct_attainment'
+    id = db.Column(db.Integer, primary_key=True)
+    course = db.Column(db.String(20), nullable=False)
+    see_percentage = db.Column(db.Float, nullable=False)  # SEE (%)
+    cie_ut_avg = db.Column(db.Float, nullable=False)     # CIE UT AVG
+    see_atn = db.Column(db.Integer)                      # Atn (X)
+    cie_atn = db.Column(db.Integer)                      # Atn (Y)
+
+class IndirectAttainment(db.Model):
+    __tablename__ = 'indirect_attainment'
+    id = db.Column(db.Integer, primary_key=True)
+    course = db.Column(db.String(20), nullable=False)
+    ces_avg = db.Column(db.Float, nullable=False)        # CES AVG
+    ces_atn = db.Column(db.Integer)
+
+class FinalAttainment(db.Model):
+    __tablename__ = 'final_attainment'
+    id = db.Column(db.Integer, primary_key=True)
+    course = db.Column(db.String(20), nullable=False, unique=True)
+    final_attainment = db.Column(db.Float, nullable=False)    
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, user_id)  # ✅ FIXED
@@ -387,15 +412,15 @@ def save_sub_co_po():
     subject = data.get("subject")
     co_data = data.get("co_data", [])
     po_data = data.get("po_data", [])
-    mapping_data = data.get("mapping_data", [])  # ✅ Extract CO-PO Mapping Values
+    mapping_data = data.get("mapping_data", [])
 
     if not subject or not co_data or not po_data:
         return jsonify({"message": "Subject, COs, and POs are required!"}), 400
 
     try:
-        # Delete existing CO-PO records for this subject
+        # Delete existing CO-PO records for this subject and user
         SubjectCOPO.query.filter_by(user_id=current_user.id, subject_name=subject).delete()
-        db.session.commit()  # ✅ Ensure old records are removed before inserting new ones
+        db.session.commit()
 
         # Save CO-PO relationships
         new_entries = []
@@ -413,12 +438,9 @@ def save_sub_co_po():
                 db.session.add(new_entry)
                 new_entries.append(new_entry)
 
-        db.session.flush()  # ✅ Get IDs of newly inserted SubjectCOPO entries
+        db.session.flush()
 
-        # ✅ Debugging: Check if CO-PO records are saved
-        print(f"✅ New CO-PO Entries: {[{'id': entry.id, 'co_code': entry.co_code, 'po_code': entry.po_code} for entry in new_entries]}")
-
-        # ✅ Save CO-PO Mapping Table values
+        # Save CO-PO Mapping values
         for mapping in mapping_data:
             related_entry = next(
                 (entry for entry in new_entries if entry.co_code == mapping["co_code"] and entry.po_code == mapping["po_code"]), 
@@ -427,11 +449,11 @@ def save_sub_co_po():
             if related_entry:
                 new_mapping = Mapping(
                     user_id=current_user.id,
-                    subject_copo_id=related_entry.id,  # ✅ Corrected to use `subject_copo_id`
+                    subject_copo_id=related_entry.id,
                     co_code=mapping["co_code"],
                     po_code=mapping["po_code"],
                     mapping_value=mapping["mapping_value"],
-                    total_hours=mapping["mapping_value"],  
+                    total_hours=mapping["mapping_value"],
                     avg_value=mapping["mapping_value"]
                 )
                 db.session.add(new_mapping)
@@ -439,29 +461,29 @@ def save_sub_co_po():
                 print(f"⚠️ No matching SubjectCOPO entry found for CO: {mapping['co_code']} and PO: {mapping['po_code']}")
 
         db.session.commit()
-        return jsonify({"message": "CO-PO Mapping saved successfully!"})
+        return jsonify({"message": "CO-PO Mapping saved successfully!"}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error: {e}")  # Debugging
+        print(f"❌ Error: {e}")
         return jsonify({"message": f"Error: {str(e)}"}), 500
 
-
 @app.route('/view_sub_co_po', methods=['GET'])
+@login_required
 def view_sub_co_po():
     subject = request.args.get('subject')
     if not subject:
         return jsonify({"message": "Subject name required"}), 400
 
-    # Fetch all SubjectCOPO entries for the subject
-    subject_copos = SubjectCOPO.query.filter_by(subject_name=subject).all()
+    # Fetch SubjectCOPO entries for the subject and user
+    subject_copos = SubjectCOPO.query.filter_by(subject_name=subject, user_id=current_user.id).all()
     if not subject_copos:
         return jsonify({"message": "No data found for this subject"}), 404
 
     # Construct response
     result = []
     for sc in subject_copos:
-        mappings = Mapping.query.filter_by(subject_copo_id=sc.id).all()
+        mappings = Mapping.query.filter_by(subject_copo_id=sc.id, user_id=current_user.id).all()
         for mapping in mappings:
             result.append({
                 "co_code": sc.co_code,
@@ -472,6 +494,17 @@ def view_sub_co_po():
                 "mapping_value": mapping.mapping_value,
                 "total_hours": mapping.total_hours,
                 "avg_value": mapping.avg_value
+            })
+        if not mappings:  # Include CO-PO pairs without mappings
+            result.append({
+                "co_code": sc.co_code,
+                "co_text": sc.co_text,
+                "cognition": sc.cognition,
+                "po_code": sc.po_code,
+                "po_text": sc.po_text,
+                "mapping_value": 0,
+                "total_hours": 0,
+                "avg_value": 0
             })
 
     return jsonify(result), 200
@@ -551,6 +584,10 @@ def update_student():
     data = request.json
     roll_no = data.get("roll_no")
     full_name = data.get("full_name")
+
+    if not roll_no or not full_name:
+        return jsonify({"message": "Roll number and full name are required!"}), 400
+
     try:
         student = Student.query.get(roll_no)
         if student:
@@ -560,6 +597,7 @@ def update_student():
         return jsonify({"message": "Student not found!"}), 404
     except Exception as e:
         return jsonify({"message": "Error updating student", "error": str(e)}), 500
+
 
 @app.route('/delete_student', methods=['POST'])
 def delete_student():
@@ -994,8 +1032,6 @@ def save_data_analysis():
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-
-
 @app.route('/view_saved_data', methods=['GET'])
 def view_saved_data():
     try:
@@ -1073,9 +1109,6 @@ def update_analysis(roll_no):
         db.session.rollback()
         return jsonify({"error": f"Failed to update student: {str(e)}"}), 500
 
-    
-
-
 @app.route('/delete_analysis/<roll_no>', methods=['DELETE'])
 def delete_analysis(roll_no):
     student = StudentPerformance.query.filter_by(roll_no=roll_no).first()
@@ -1088,65 +1121,201 @@ def delete_analysis(roll_no):
     
     return jsonify({"message": f"Record for Roll No. {roll_no} deleted successfully!"})
 
+# Helper function for attainment levels
+def get_attainment_level(percentage, context):
+    percentage = float(percentage)
+    if context == 'CES':
+        if percentage >= 85:
+            return 3
+        elif percentage >= 80:
+            return 2
+        return 1
+    else:  # SEE or CIE
+        if percentage >= 75:
+            return 3
+        elif percentage >= 50:
+            return 2
+        return 1
+
+# Routes
 @app.route('/Co_Attainment_Cal')
 def co_attainment_cal():
-    return render_template('co_attainment_cal.html')  # Or the appropriate template
+    return render_template('co_attainment_cal.html')
+
+@app.route('/get_summary', methods=['GET'])
+def get_summary():
+    try:
+        direct_data = DirectAttainment.query.all()
+        if not direct_data:
+            courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6']
+            for course in courses:
+                new_direct = DirectAttainment(
+                    course=course,
+                    see_percentage=0.0,
+                    cie_ut_avg=0.0,
+                    see_atn=1,
+                    cie_atn=1
+                )
+                db.session.add(new_direct)
+            db.session.commit()
+            direct_data = DirectAttainment.query.all()
+
+        response = {
+            'perc1': sum(d.see_percentage for d in direct_data) / len(direct_data),
+            'perc2': sum(d.cie_ut_avg for d in direct_data) / len(direct_data)
+        }
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_indirect', methods=['GET'])
+def get_indirect():
+    try:
+        indirect_data = IndirectAttainment.query.all()
+        if not indirect_data:
+            courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6']
+            for i, course in enumerate(courses, 1):
+                new_indirect = IndirectAttainment(
+                    course=course,
+                    ces_avg=0.0,
+                    ces_atn=1
+                )
+                db.session.add(new_indirect)
+            db.session.commit()
+            indirect_data = IndirectAttainment.query.all()
+
+        response = {
+            'wtAvgCO1': indirect_data[0].ces_avg,
+            'wtAvgCO2': indirect_data[1].ces_avg,
+            'wtAvgCO3': indirect_data[2].ces_avg,
+            'wtAvgCO4': indirect_data[3].ces_avg,
+            'wtAvgCO5': indirect_data[4].ces_avg,
+            'wtAvgCO6': indirect_data[5].ces_avg
+        }
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/save_attainment', methods=['POST'])
+def save_attainment():
+    try:
+        data = request.json
+        print(f"Received save data: {data}")  # Debug
+        course = data.get('course')
+        see_percentage = float(data.get('see_percentage', 0))
+        cie_ut_avg = float(data.get('cie_ut_avg', 0))
+        ces_avg = float(data.get('ces_avg', 0))
+
+        direct = DirectAttainment.query.filter_by(course=course).first()
+        if direct:
+            direct.see_percentage = see_percentage
+            direct.cie_ut_avg = cie_ut_avg
+            direct.see_atn = get_attainment_level(see_percentage, 'SEE')
+            direct.cie_atn = get_attainment_level(cie_ut_avg, 'CIE')
+        else:
+            direct = DirectAttainment(
+                course=course,
+                see_percentage=see_percentage,
+                cie_ut_avg=cie_ut_avg,
+                see_atn=get_attainment_level(see_percentage, 'SEE'),
+                cie_atn=get_attainment_level(cie_ut_avg, 'CIE')
+            )
+            db.session.add(direct)
+
+        indirect = IndirectAttainment.query.filter_by(course=course).first()
+        if indirect:
+            indirect.ces_avg = ces_avg
+            indirect.ces_atn = get_attainment_level(ces_avg, 'CES')
+        else:
+            indirect = IndirectAttainment(
+                course=course,
+                ces_avg=ces_avg,
+                ces_atn=get_attainment_level(ces_avg, 'CES')
+            )
+            db.session.add(indirect)
+
+        db.session.commit()
+        print(f"Saved {course}: see_atn={direct.see_atn}, cie_atn={direct.cie_atn}, ces_atn={indirect.ces_atn}")  # Debug
+        return jsonify({'message': 'Data saved successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Save error: {str(e)}")  # Debug
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/get_final_attainment', methods=['GET'])
 def get_final_attainment():
     try:
-        # Fetch latest direct and indirect summaries
-        direct_summary = AssessmentSummary.query.order_by(AssessmentSummary.timestamp.desc()).first()
-        indirect_summary = CourseAnalysis.query.order_by(CourseAnalysis.timestamp.desc()).first()
+        direct_data = DirectAttainment.query.all()
+        indirect_data = IndirectAttainment.query.all()
+        print(f"Direct data: {[(d.course, d.see_percentage, d.cie_ut_avg, d.see_atn, d.cie_atn) for d in direct_data]}")  # Debug
+        print(f"Indirect data: {[(i.course, i.ces_avg, i.ces_atn) for i in indirect_data]}")  # Debug
 
-        if not direct_summary or not indirect_summary:
-            return jsonify({"error": "No summary data available"}), 404
+        courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6']
+        if not direct_data:
+            for course in courses:
+                new_direct = DirectAttainment(course=course, see_percentage=0.0, cie_ut_avg=0.0, see_atn=1, cie_atn=1)
+                db.session.add(new_direct)
+            print("Initialized direct_attainment")
+        if not indirect_data:
+            for course in courses:
+                new_indirect = IndirectAttainment(course=course, ces_avg=0.0, ces_atn=1)
+                db.session.add(new_indirect)
+            print("Initialized indirect_attainment")
+        
+        if not direct_data or not indirect_data:
+            db.session.commit()
+            direct_data = DirectAttainment.query.all()
+            indirect_data = IndirectAttainment.query.all()
 
-        # Example: Calculate final attainment (simplified, match with Co_Attainment_Cal.html logic)
-        attainments = {
-            "CSC305.1": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co1),
-            "CSC305.2": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co2),
-            "CSC305.3": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co3),
-            "CSC305.4": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co4),
-            "CSC305.5": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co5),
-            "CSC305.6": 0.9 * (0.8 * get_attainment_level(direct_summary.perc1) + 0.2 * get_attainment_level(direct_summary.perc2)) + 0.1 * get_attainment_level(indirect_summary.wt_avg_co6)
-        }
+        direct_dict = {d.course: d for d in direct_data}
+        indirect_dict = {i.course: i for i in indirect_data}
 
+        attainments = {}
+        for course in courses:
+            direct = direct_dict.get(course)
+            indirect = indirect_dict.get(course)
+            if direct and indirect:
+                direct_component = 0.8 * direct.see_atn + 0.2 * direct.cie_atn
+                final_attainment = 0.9 * direct_component + 0.1 * indirect.ces_atn
+                attainments[course] = round(final_attainment, 2)
+
+                # Save or update final attainment in the database
+                final_record = FinalAttainment.query.filter_by(course=course).first()
+                if final_record:
+                    final_record.final_attainment = attainments[course]
+                else:
+                    final_record = FinalAttainment(course=course, final_attainment=attainments[course])
+                    db.session.add(final_record)
+                print(f"{course}: see_atn={direct.see_atn}, cie_atn={direct.cie_atn}, ces_atn={indirect.ces_atn}, final={attainments[course]}")  # Debug
+
+        db.session.commit()
+        print(f"Returning: {attainments}")  # Debug
         return jsonify({"attainments": attainments}), 200
     except Exception as e:
+        db.session.rollback()
+        print(f"Error in get_final_attainment: {str(e)}")  # Debug
         return jsonify({"error": str(e)}), 500
 
-def get_attainment_level(percentage):
-    # Match the logic from Co_Attainment_Cal.html
-    percentage = float(percentage)
-    if percentage >= 75:
-        return 3
-    elif percentage >= 50:
-        return 2
-    return 1
-
-
-
-
-
-
-
-
-
-
-
-
-@app.route('/newfile', methods=['GET'])
-def newfile():
+@app.route('/co_achievement', methods=['GET'])
+def co_achievement():
     try:
-        return render_template('newfile.html')
+        return render_template('co_achievement.html')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@app.route('/Po_Attainment_Cal', methods=['GET'])
+def Po_Attainment_Cal():
+    try:
+        return render_template('Po_Attainment_Cal.html')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500    
 
-
-
-
-
+@app.route('/po_achievement', methods=['GET'])
+def po_achievement():
+    try:
+        return render_template('po_achievement.html')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500    
+    
 if __name__ == "__main__":
     app.run(debug=True)
