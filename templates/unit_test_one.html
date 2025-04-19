@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test 1</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        input {
+            width: 50px;
+            text-align: center;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-custom:hover {
+            background-color: #218838;
+        }
+
+        .card {
+            padding: 15px;
+            border-radius: 8px;
+            background: #e9ecef;
+        }
+
+        #cgpa-box {
+            font-size: 22px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        .summary-table,
+        .co-table {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">Unit Test 1</h1>
+
+        <!-- UT1 Table -->
+        <div class="table-responsive mt-3">
+            <table id="student-marks">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Roll No</th>
+                        <th rowspan="2">Student Name</th>
+                        <th colspan="6">Q1</th>
+                        <th colspan="2">Q2</th>
+                        <th colspan="2">Q3</th>
+                        <th rowspan="2">Total UT1<br>(20 M)</th>
+                        <th rowspan="2">Actions</th>
+                    </tr>
+                    <tr>
+                        <th>a</th>
+                        <th>b</th>
+                        <th>c</th>
+                        <th>d</th>
+                        <th>e</th>
+                        <th>f</th>
+                        <th>a</th>
+                        <th>b</th>
+                        <th>a</th>
+                        <th>b</th>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td>2M</td>
+                        <td>2M</td>
+                        <td>2M</td>
+                        <td>2M</td>
+                        <td>2M</td>
+                        <td>2M</td>
+                        <td>5M</td>
+                        <td>5M</td>
+                        <td>5M</td>
+                        <td>5M</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td><select class="form-control co-input" data-qn="1a">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="1b">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="1c">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="1d">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="1e">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="1f">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="2a">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="2b">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="3a">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td><select class="form-control co-input" data-qn="3b">
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                            </select></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody id="student-marks-body">
+                    <tr>
+                        <td><input type="text" class="form-control roll" /></td>
+                        <td><input type="text" class="form-control name" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                        <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                        <td><span class="total-marks">0</span></td>
+                        <td><button class="btn btn-danger btn-sm"
+                                onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Row and Upload CSV side by side -->
+        <div class="row mt-4">
+            <div class="col-md-6 text-center">
+                <button class="btn btn-success btn-custom" onclick="addRow()">Add Row</button>
+            </div>
+            <div class="col-md-6 text-center">
+                <input type="file" name="csv_file" id="csvFileInput" accept=".csv"
+                    class="form-control d-inline-block w-auto mb-2" />
+                <button type="button" class="btn btn-dark" onclick="uploadCSV()">Upload CSV</button>
+            </div>
+        </div>
+
+        <!-- Summary Table -->
+        <div class="table-responsive summary-table">
+            <table id="summary-table">
+                <thead>
+                    <tr>
+                        <th>Average</th>
+                        <th>Q1a</th>
+                        <th>Q1b</th>
+                        <th>Q1c</th>
+                        <th>Q1d</th>
+                        <th>Q1e</th>
+                        <th>Q1f</th>
+                        <th>Q2a</th>
+                        <th>Q2b</th>
+                        <th>Q3a</th>
+                        <th>Q3b</th>
+                        <th>Total</th>
+                    </tr>
+                    <tr>
+                        <th>Maximum Marks</th>
+                        <th>2</th>
+                        <th>2</th>
+                        <th>2</th>
+                        <th>2</th>
+                        <th>2</th>
+                        <th>2</th>
+                        <th>5</th>
+                        <th>5</th>
+                        <th>5</th>
+                        <th>5</th>
+                        <th>20</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Average</td>
+                        <td id="avg-q1a">0</td>
+                        <td id="avg-q1b">0</td>
+                        <td id="avg-q1c">0</td>
+                        <td id="avg-q1d">0</td>
+                        <td id="avg-q1e">0</td>
+                        <td id="avg-q1f">0</td>
+                        <td id="avg-q2a">0</td>
+                        <td id="avg-q2b">0</td>
+                        <td id="avg-q3a">0</td>
+                        <td id="avg-q3b">0</td>
+                        <td id="avg-total">0</td>
+                    </tr>
+                    <tr>
+                        <td>Percentage of Average</td>
+                        <td id="perc-q1a">0.00</td>
+                        <td id="perc-q1b">0.00</td>
+                        <td id="perc-q1c">0.00</td>
+                        <td id="perc-q1d">0.00</td>
+                        <td id="perc-q1e">0.00</td>
+                        <td id="perc-q1f">0.00</td>
+                        <td id="perc-q2a">0.00</td>
+                        <td id="perc-q2b">0.00</td>
+                        <td id="perc-q3a">0.00</td>
+                        <td id="perc-q3b">0.00</td>
+                        <td id="perc-total">0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CO Table -->
+        <div class="table-responsive co-table">
+            <table id="co-table">
+                <thead>
+                    <tr>
+                        <th>Maximum Marks</th>
+                        <th>Q1a</th>
+                        <th>Q1b</th>
+                        <th>Q1c</th>
+                        <th>Q1d</th>
+                        <th>Q1e</th>
+                        <th>Q1f</th>
+                        <th>Q2a</th>
+                        <th>Q2b</th>
+                        <th>Q3a</th>
+                        <th>Q3b</th>
+                        <th>Average</th>
+                        <th>Percentage</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <td>2</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td>2</td>
+                        <td>5</td>
+                        <td>5</td>
+                        <td>5</td>
+                        <td>5</td>
+                        <td>20</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>CO1</th>
+                        <td id="co1-q1a">0</td>
+                        <td id="co1-q1b">0</td>
+                        <td id="co1-q1c">0</td>
+                        <td id="co1-q1d">0</td>
+                        <td id="co1-q1e">0</td>
+                        <td id="co1-q1f">0</td>
+                        <td id="co1-q2a">0</td>
+                        <td id="co1-q2b">0</td>
+                        <td id="co1-q3a">0</td>
+                        <td id="co1-q3b">0</td>
+                        <td id="co1-avg">0</td>
+                        <td id="co1-perc">0.00</td>
+                    </tr>
+                    <tr>
+                        <th>CO2</th>
+                        <td id="co2-q1a">0</td>
+                        <td id="co2-q1b">0</td>
+                        <td id="co2-q1c">0</td>
+                        <td id="co2-q1d">0</td>
+                        <td id="co2-q1e">0</td>
+                        <td id="co2-q1f">0</td>
+                        <td id="co2-q2a">0</td>
+                        <td id="co2-q2b">0</td>
+                        <td id="co2-q3a">0</td>
+                        <td id="co2-q3b">0</td>
+                        <td id="co2-avg">0</td>
+                        <td id="co2-perc">0.00</td>
+                    </tr>
+                    <tr>
+                        <th>CO3</th>
+                        <td id="co3-q1a">0</td>
+                        <td id="co3-q1b">0</td>
+                        <td id="co3-q1c">0</td>
+                        <td id="co3-q1d">0</td>
+                        <td id="co3-q1e">0</td>
+                        <td id="co3-q1f">0</td>
+                        <td id="co3-q2a">0</td>
+                        <td id="co3-q2b">0</td>
+                        <td id="co3-q3a">0</td>
+                        <td id="co3-q3b">0</td>
+                        <td id="co3-avg">0</td>
+                        <td id="co3-perc">0.00</td>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+
+        <!-- Buttons and CGPA Display -->
+        <div class="text-center mt-4">
+            <button class="btn btn-warning" onclick="Saveunit1()">Save</button>
+            <button class="btn btn-secondary" onclick="direct_assesment()">Next</button>
+            <button class="btn btn-info" onclick="loadunit1()">Load Data</button>
+        </div>
+    </div>
+
+    <script>
+        // CO Mapping (example based on CO inputs; adjust as needed)
+        const coMapping = {
+            '1a': 'CO1', '1b': 'CO1', '1c': 'CO2', '1d': 'CO2', '1e': 'CO3', '1f': 'CO3',
+            '2a': 'CO2', '2b': 'CO3', '3a': 'CO1', '3b': 'CO2'
+        };
+
+        function uploadCSV() {
+            const input = document.getElementById('csvFileInput');
+            const file = input.files[0];
+
+            if (!file) {
+                alert('Please select a file!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('csv_file', file);
+
+            fetch('/upload_unit1', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        populateTable(data.data);
+                        alert('CSV file uploaded successfully!');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error uploading file.');
+                });
+        }
+
+        function populateTable(data) {
+            const tbody = document.getElementById('student-marks-body');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                if (row.length < 12) return;
+
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><input type="text" class="form-control roll" value="${row[0] || ''}" /></td>
+                    <td><input type="text" class="form-control name" value="${row[1] || ''}" /></td>
+                    ${row.slice(2, 8).map(val => `<td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" value="${val || 0}" /></td>`).join('')}
+                    ${row.slice(8, 12).map(val => `<td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" value="${val || 0}" /></td>`).join('')}
+                    <td><span class="total-marks">0</span></td>
+                    <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+                `;
+                tbody.appendChild(newRow);
+            });
+
+            CalculateMarks();
+        }
+
+        function CalculateMarks() {
+            const rows = document.querySelectorAll("#student-marks-body tr");
+            let totals = { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, total: 0 };
+            let coTotals = {
+                CO1: { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, avg: 0, count: 0, perc: [] },
+                CO2: { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, avg: 0, count: 0, perc: [] },
+                CO3: { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, avg: 0, count: 0, perc: [] }
+            };
+            let count = 0;
+
+            rows.forEach(row => {
+                let q1Marks = [];
+                let q2Marks = [];
+                let q3Marks = [];
+                const marksInputs = row.querySelectorAll(".marks");
+
+                marksInputs.forEach((input, index) => {
+                    const maxMark = parseInt(input.dataset.marks);
+                    const val = parseFloat(input.value) || 0;
+                    const qn = ['1a', '1b', '1c', '1d', '1e', '1f', '2a', '2b', '3a', '3b'][index];
+
+                    if (!isNaN(val) && val >= 0 && val <= maxMark) {
+                        if (index < 6) q1Marks.push({ qn, val });
+                        else if (index < 8) q2Marks.push({ qn, val });
+                        else q3Marks.push({ qn, val });
+                    }
+                });
+
+                q1Marks.sort((a, b) => b.val - a.val);
+                q1Marks = q1Marks.slice(0, 5);
+
+                q2Marks.sort((a, b) => b.val - a.val);
+                q2Marks = q2Marks.slice(0, 2);
+
+                q3Marks.sort((a, b) => b.val - a.val);
+                q3Marks = q3Marks.slice(0, 1);
+
+                let rowTotal = (q1Marks.reduce((a, b) => a + b.val, 0) || 0) +
+                    (q2Marks.reduce((a, b) => a + b.val, 0) || 0) +
+                    (q3Marks[0]?.val || 0);
+                rowTotal = Math.min(rowTotal, 20);
+
+                row.querySelector(".total-marks").textContent = rowTotal.toFixed(2);
+                if (rowTotal > 0) {
+                    totals.q1a += q1Marks.find(m => m.qn === '1a')?.val || 0;
+                    totals.q1b += q1Marks.find(m => m.qn === '1b')?.val || 0;
+                    totals.q1c += q1Marks.find(m => m.qn === '1c')?.val || 0;
+                    totals.q1d += q1Marks.find(m => m.qn === '1d')?.val || 0;
+                    totals.q1e += q1Marks.find(m => m.qn === '1e')?.val || 0;
+                    totals.q1f += q1Marks.find(m => m.qn === '1f')?.val || 0;
+                    totals.q2a += q2Marks.find(m => m.qn === '2a')?.val || 0;
+                    totals.q2b += q2Marks.find(m => m.qn === '2b')?.val || 0;
+                    totals.q3a += q3Marks.find(m => m.qn === '3a')?.val || 0;
+                    totals.q3b += q3Marks.find(m => m.qn === '3b')?.val || 0;
+                    totals.total += rowTotal;
+
+                    const allBestMarks = [...q1Marks, ...q2Marks, ...q3Marks];
+                    marksInputs.forEach((input, index) => {
+                        const val = parseFloat(input.value) || 0;
+                        const qn = ['1a', '1b', '1c', '1d', '1e', '1f', '2a', '2b', '3a', '3b'][index];
+                        let co = null;
+                        if (qn === '1a' || qn === '1b') co = 'CO1';
+                        else if (qn === '1c' || qn === '1d' || qn === '1e' || qn === '1f' || qn === '2a' || qn === '2b') co = 'CO2';
+                        else if (qn === '3a' || qn === '3b') co = 'CO3';
+
+                        if (co) {
+                            const bestMark = allBestMarks.find(m => m.qn === qn)?.val || 0;
+                            if (bestMark > 0) {
+                                coTotals[co].avg += bestMark;
+                                coTotals[co].count++;
+                                const maxMark = parseInt(input.dataset.marks);
+                                const perc = (bestMark / maxMark) * 100;
+                                coTotals[co].perc.push(perc);
+                            }
+                        }
+                    });
+                    count++;
+                }
+            });
+
+            // Update summary table
+            document.getElementById('avg-q1a').textContent = (count > 0 ? (totals.q1a / count).toFixed(2) : 0);
+            document.getElementById('avg-q1b').textContent = (count > 0 ? (totals.q1b / count).toFixed(2) : 0);
+            document.getElementById('avg-q1c').textContent = (count > 0 ? (totals.q1c / count).toFixed(2) : 0);
+            document.getElementById('avg-q1d').textContent = (count > 0 ? (totals.q1d / count).toFixed(2) : 0);
+            document.getElementById('avg-q1e').textContent = (count > 0 ? (totals.q1e / count).toFixed(2) : 0);
+            document.getElementById('avg-q1f').textContent = (count > 0 ? (totals.q1f / count).toFixed(2) : 0);
+            document.getElementById('avg-q2a').textContent = (count > 0 ? (totals.q2a / count).toFixed(2) : 0);
+            document.getElementById('avg-q2b').textContent = (count > 0 ? (totals.q2b / count).toFixed(2) : 0);
+            document.getElementById('avg-q3a').textContent = (count > 0 ? (totals.q3a / count).toFixed(2) : 0);
+            document.getElementById('avg-q3b').textContent = (count > 0 ? (totals.q3b / count).toFixed(2) : 0);
+            document.getElementById('avg-total').textContent = (count > 0 ? (totals.total / count).toFixed(2) : 0);
+
+            document.getElementById('perc-q1a').textContent = (count > 0 ? ((totals.q1a / count) / 2 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q1b').textContent = (count > 0 ? ((totals.q1b / count) / 2 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q1c').textContent = (count > 0 ? ((totals.q1c / count) / 2 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q1d').textContent = (count > 0 ? ((totals.q1d / count) / 2 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q1e').textContent = (count > 0 ? ((totals.q1e / count) / 2 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q1f').textContent = (count > 0 ? ((totals.q1f / count) / 2 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q2a').textContent = (count > 0 ? ((totals.q2a / count) / 5 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q2b').textContent = (count > 0 ? ((totals.q2b / count) / 5 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q3a').textContent = (count > 0 ? ((totals.q3a / count) / 5 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-q3b').textContent = (count > 0 ? ((totals.q3b / count) / 5 * 100).toFixed(2) : 0.00);
+            document.getElementById('perc-total').textContent = (count > 0 ? (totals.total / (count * 20) * 100).toFixed(2) : 0.00);
+
+            // Update CO table with exact summary table averages
+            ['CO1', 'CO2', 'CO3'].forEach(co => {
+                const avg = coTotals[co].count > 0 ? (coTotals[co].avg / coTotals[co].count).toFixed(2) : 0;
+                const percAvg = coTotals[co].perc.length > 0 ? (coTotals[co].perc.reduce((a, b) => a + b, 0) / coTotals[co].perc.length).toFixed(2) : 0.00;
+
+                // Reset all CO totals
+                Object.keys(coTotals[co]).forEach(key => {
+                    if (key !== 'avg' && key !== 'count' && key !== 'perc') coTotals[co][key] = 0;
+                });
+
+                // Assign averages from summary table based on mappings
+                if (co === 'CO1') {
+                    coTotals[co].q1a = totals.q1a;
+                    coTotals[co].q1b = totals.q1b;
+                    coTotals[co].avg = (totals.q1a + totals.q1b) / (count * 2) * 100; // Average of Q1a and Q1b
+                } else if (co === 'CO2') {
+                    coTotals[co].q1c = totals.q1c;
+                    coTotals[co].q1d = totals.q1d;
+                    coTotals[co].q1e = totals.q1e;
+                    coTotals[co].q1f = totals.q1f;
+                    coTotals[co].q2a = totals.q2a;
+                    coTotals[co].q2b = totals.q2b;
+                    coTotals[co].avg = (totals.q1c + totals.q1d + totals.q1e + totals.q1f + totals.q2a + totals.q2b) / (count * 14) * 100; // Average of 6 questions (2+2+2+2+5+5)
+                } else if (co === 'CO3') {
+                    coTotals[co].q3a = totals.q3a;
+                    coTotals[co].q3b = totals.q3b;
+                    coTotals[co].avg = (totals.q3a + totals.q3b) / (count * 10) * 100; // Average of Q3a and Q3b (5+5)
+                }
+
+                // Update CO table display with summary averages
+                document.getElementById(`${co.toLowerCase()}-q1a`).textContent = (coTotals[co].q1a / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1b`).textContent = (coTotals[co].q1b / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1c`).textContent = (coTotals[co].q1c / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1d`).textContent = (coTotals[co].q1d / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1e`).textContent = (coTotals[co].q1e / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1f`).textContent = (coTotals[co].q1f / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q2a`).textContent = (coTotals[co].q2a / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q2b`).textContent = (coTotals[co].q2b / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q3a`).textContent = (coTotals[co].q3a / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q3b`).textContent = (coTotals[co].q3b / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-avg`).textContent = avg;
+                document.getElementById(`${co.toLowerCase()}-perc`).textContent = percAvg;
+            });
+        }
+
+        function addRow() {
+            const tbody = document.getElementById("student-marks-body");
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td><input type="text" class="form-control roll" /></td>
+                <td><input type="text" class="form-control name" /></td>
+                <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                <td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" /></td>
+                <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
+                <td><span class="total-marks">0</span></td>
+                <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+            `;
+            tbody.appendChild(newRow);
+            CalculateMarks(); // Recalculate immediately after adding a row
+        }
+
+        function Saveunit1() {
+            const rows = document.querySelectorAll("#student-marks-body tr");
+            const data = [];
+
+            // Collect student data
+            rows.forEach(row => {
+                const rowData = [];
+                const inputs = row.querySelectorAll("input");
+                inputs.forEach(input => {
+                    rowData.push(input.value);
+                });
+                data.push(rowData);
+            });
+
+            // Collect summary table data
+            const summary = {
+                q1a_avg: document.getElementById('avg-q1a').textContent,
+                q1b_avg: document.getElementById('avg-q1b').textContent,
+                q1c_avg: document.getElementById('avg-q1c').textContent,
+                q1d_avg: document.getElementById('avg-q1d').textContent,
+                q1e_avg: document.getElementById('avg-q1e').textContent,
+                q1f_avg: document.getElementById('avg-q1f').textContent,
+                q2a_avg: document.getElementById('avg-q2a').textContent,
+                q2b_avg: document.getElementById('avg-q2b').textContent,
+                q3a_avg: document.getElementById('avg-q3a').textContent,
+                q3b_avg: document.getElementById('avg-q3b').textContent,
+                total_avg: document.getElementById('avg-total').textContent,
+                q1a_perc: document.getElementById('perc-q1a').textContent,
+                q1b_perc: document.getElementById('perc-q1b').textContent,
+                q1c_perc: document.getElementById('perc-q1c').textContent,
+                q1d_perc: document.getElementById('perc-q1d').textContent,
+                q1e_perc: document.getElementById('perc-q1e').textContent,
+                q1f_perc: document.getElementById('perc-q1f').textContent,
+                q2a_perc: document.getElementById('perc-q2a').textContent,
+                q2b_perc: document.getElementById('perc-q2b').textContent,
+                q3a_perc: document.getElementById('perc-q3a').textContent,
+                q3b_perc: document.getElementById('perc-q3b').textContent,
+                total_perc: document.getElementById('perc-total').textContent
+            };
+
+            // Collect CO table data
+            const co = [
+                {
+                    co: 'CO1',
+                    q1a: document.getElementById('co1-q1a').textContent,
+                    q1b: document.getElementById('co1-q1b').textContent,
+                    q1c: document.getElementById('co1-q1c').textContent,
+                    q1d: document.getElementById('co1-q1d').textContent,
+                    q1e: document.getElementById('co1-q1e').textContent,
+                    q1f: document.getElementById('co1-q1f').textContent,
+                    q2a: document.getElementById('co1-q2a').textContent,
+                    q2b: document.getElementById('co1-q2b').textContent,
+                    q3a: document.getElementById('co1-q3a').textContent,
+                    q3b: document.getElementById('co1-q3b').textContent,
+                    avg: document.getElementById('co1-avg').textContent,
+                    perc: document.getElementById('co1-perc').textContent
+                },
+                {
+                    co: 'CO2',
+                    q1a: document.getElementById('co2-q1a').textContent,
+                    q1b: document.getElementById('co2-q1b').textContent,
+                    q1c: document.getElementById('co2-q1c').textContent,
+                    q1d: document.getElementById('co2-q1d').textContent,
+                    q1e: document.getElementById('co2-q1e').textContent,
+                    q1f: document.getElementById('co2-q1f').textContent,
+                    q2a: document.getElementById('co2-q2a').textContent,
+                    q2b: document.getElementById('co2-q2b').textContent,
+                    q3a: document.getElementById('co2-q3a').textContent,
+                    q3b: document.getElementById('co2-q3b').textContent,
+                    avg: document.getElementById('co2-avg').textContent,
+                    perc: document.getElementById('co2-perc').textContent
+                },
+                {
+                    co: 'CO3',
+                    q1a: document.getElementById('co3-q1a').textContent,
+                    q1b: document.getElementById('co3-q1b').textContent,
+                    q1c: document.getElementById('co3-q1c').textContent,
+                    q1d: document.getElementById('co3-q1d').textContent,
+                    q1e: document.getElementById('co3-q1e').textContent,
+                    q1f: document.getElementById('co3-q1f').textContent,
+                    q2a: document.getElementById('co3-q2a').textContent,
+                    q2b: document.getElementById('co3-q2b').textContent,
+                    q3a: document.getElementById('co3-q3a').textContent,
+                    q3b: document.getElementById('co3-q3b').textContent,
+                    avg: document.getElementById('co3-avg').textContent,
+                    perc: document.getElementById('co3-perc').textContent
+                }
+            ];
+
+            // Construct the full data object
+            const requestData = {
+                students: data,
+                summary: summary,
+                co: co
+            };
+
+            // Send the data to the server
+            fetch('http://127.0.0.1:5000/save_unit1', {
+                method: 'POST',
+                body: JSON.stringify(requestData),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+
+
+        function loadunit1() {
+            fetch('/load_unit1')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        // Populate student marks table
+                        const tbody = document.getElementById('student-marks-body');
+                        tbody.innerHTML = '';
+                        data.students.forEach(row => {
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                            <td><input type="text" class="form-control roll" value="${row[0] || ''}" /></td>
+                            <td><input type="text" class="form-control name" value="${row[1] || ''}" /></td>
+                            ${row.slice(2, 8).map(val => `<td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" value="${val || 0}" /></td>`).join('')}
+                            ${row.slice(8, 12).map(val => `<td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" value="${val || 0}" /></td>`).join('')}
+                            <td><span class="total-marks">0</span></td>
+                            <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+                        `;
+                            tbody.appendChild(newRow);
+                        });
+
+                        // Populate summary table
+                        document.getElementById('avg-q1a').textContent = data.summary.q1a_avg;
+                        document.getElementById('avg-q1b').textContent = data.summary.q1b_avg;
+                        document.getElementById('avg-q1c').textContent = data.summary.q1c_avg;
+                        document.getElementById('avg-q1d').textContent = data.summary.q1d_avg;
+                        document.getElementById('avg-q1e').textContent = data.summary.q1e_avg;
+                        document.getElementById('avg-q1f').textContent = data.summary.q1f_avg;
+                        document.getElementById('avg-q2a').textContent = data.summary.q2a_avg;
+                        document.getElementById('avg-q2b').textContent = data.summary.q2b_avg;
+                        document.getElementById('avg-q3a').textContent = data.summary.q3a_avg;
+                        document.getElementById('avg-q3b').textContent = data.summary.q3b_avg;
+                        document.getElementById('avg-total').textContent = data.summary.total_avg;
+                        document.getElementById('perc-q1a').textContent = data.summary.q1a_perc;
+                        document.getElementById('perc-q1b').textContent = data.summary.q1b_perc;
+                        document.getElementById('perc-q1c').textContent = data.summary.q1c_perc;
+                        document.getElementById('perc-q1d').textContent = data.summary.q1d_perc;
+                        document.getElementById('perc-q1e').textContent = data.summary.q1e_perc;
+                        document.getElementById('perc-q1f').textContent = data.summary.q1f_perc;
+                        document.getElementById('perc-q2a').textContent = data.summary.q2a_perc;
+                        document.getElementById('perc-q2b').textContent = data.summary.q2b_perc;
+                        document.getElementById('perc-q3a').textContent = data.summary.q3a_perc;
+                        document.getElementById('perc-q3b').textContent = data.summary.q3b_perc;
+                        document.getElementById('perc-total').textContent = data.summary.total_perc;
+
+                        // Populate CO table
+                        data.co.forEach(co => {
+                            const coId = co.co.toLowerCase();
+                            document.getElementById(`${coId}-q1a`).textContent = co.q1a;
+                            document.getElementById(`${coId}-q1b`).textContent = co.q1b;
+                            document.getElementById(`${coId}-q1c`).textContent = co.q1c;
+                            document.getElementById(`${coId}-q1d`).textContent = co.q1d;
+                            document.getElementById(`${coId}-q1e`).textContent = co.q1e;
+                            document.getElementById(`${coId}-q1f`).textContent = co.q1f;
+                            document.getElementById(`${coId}-q2a`).textContent = co.q2a;
+                            document.getElementById(`${coId}-q2b`).textContent = co.q2b;
+                            document.getElementById(`${coId}-q3a`).textContent = co.q3a;
+                            document.getElementById(`${coId}-q3b`).textContent = co.q3b;
+                            document.getElementById(`${coId}-avg`).textContent = co.avg;
+                            document.getElementById(`${coId}-perc`).textContent = co.perc;
+                        });
+
+                        CalculateMarks(); // Recalculate to ensure totals are correct
+                        alert('Data loaded successfully!');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error loading data.');
+                });
+        }
+
+        document.querySelectorAll('.co-input').forEach(select => {
+            const qn = select.getAttribute('data-qn');
+            coMapping[qn] = select.value;
+            select.addEventListener('change', () => {
+                coMapping[qn] = select.value;
+                CalculateMarks();
+            });
+        });
+
+    </script>
+</body>
+
+</html>

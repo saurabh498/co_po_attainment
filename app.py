@@ -3,6 +3,7 @@ import io
 import json
 import datetime
 from io import StringIO
+import os
 from sqlite3 import Cursor
 import traceback
 from venv import logger
@@ -100,33 +101,61 @@ class Student(db.Model):
         }
 
 class StudentMarks(db.Model):
-    __tablename__ = 'student_marks'
-    
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, nullable=False, unique=True)  # Roll number
-    avg_unit_test_marks = db.Column(db.Float, default=0.0)  # Average of UT1 (and UT2 if added later)
-    external_exam = db.Column(db.Float, default=0.0)  # Max 80
-    orals = db.Column(db.Float, default=0.0)  # Max 25
-    term_work = db.Column(db.Float, default=0.0)  # Max 25
-    cgpa = db.Column(db.Float, default=0.0)  # Calculated CGPA
+    roll_no = db.Column(db.String(20), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    q1a = db.Column(db.Float, nullable=False, default=0)
+    q1b = db.Column(db.Float, nullable=False, default=0)
+    q1c = db.Column(db.Float, nullable=False, default=0)
+    q1d = db.Column(db.Float, nullable=False, default=0)
+    q1e = db.Column(db.Float, nullable=False, default=0)
+    q1f = db.Column(db.Float, nullable=False, default=0)
+    q2a = db.Column(db.Float, nullable=False, default=0)
+    q2b = db.Column(db.Float, nullable=False, default=0)
+    q3a = db.Column(db.Float, nullable=False, default=0)
+    q3b = db.Column(db.Float, nullable=False, default=0)
+    total = db.Column(db.Float, nullable=False, default=0)
 
-class UnitTestMarks(db.Model):
-    __tablename__ = 'unit_test_marks'
+class SummaryData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    student_marks_id = db.Column(db.Integer, db.ForeignKey('student_marks.id'), nullable=False, index=True)
-    unit_test_number = db.Column(db.Integer, nullable=False)  # 1 for UT1
-    question_number = db.Column(db.String(10), nullable=False)  # e.g., "1a", "2b", "3a"
-    marks = db.Column(db.Integer, default=0)  # Marks for each question
-    __table_args__ = (db.UniqueConstraint('student_marks_id', 'unit_test_number', 'question_number', name='unique_question_per_test'),)
+    q1a_avg = db.Column(db.Float, nullable=False, default=0)
+    q1b_avg = db.Column(db.Float, nullable=False, default=0)
+    q1c_avg = db.Column(db.Float, nullable=False, default=0)
+    q1d_avg = db.Column(db.Float, nullable=False, default=0)
+    q1e_avg = db.Column(db.Float, nullable=False, default=0)
+    q1f_avg = db.Column(db.Float, nullable=False, default=0)
+    q2a_avg = db.Column(db.Float, nullable=False, default=0)
+    q2b_avg = db.Column(db.Float, nullable=False, default=0)
+    q3a_avg = db.Column(db.Float, nullable=False, default=0)
+    q3b_avg = db.Column(db.Float, nullable=False, default=0)
+    total_avg = db.Column(db.Float, nullable=False, default=0)
+    q1a_perc = db.Column(db.Float, nullable=False, default=0)
+    q1b_perc = db.Column(db.Float, nullable=False, default=0)
+    q1c_perc = db.Column(db.Float, nullable=False, default=0)
+    q1d_perc = db.Column(db.Float, nullable=False, default=0)
+    q1e_perc = db.Column(db.Float, nullable=False, default=0)
+    q1f_perc = db.Column(db.Float, nullable=False, default=0)
+    q2a_perc = db.Column(db.Float, nullable=False, default=0)
+    q2b_perc = db.Column(db.Float, nullable=False, default=0)
+    q3a_perc = db.Column(db.Float, nullable=False, default=0)
+    q3b_perc = db.Column(db.Float, nullable=False, default=0)
+    total_perc = db.Column(db.Float, nullable=False, default=0)
 
-class CO_Mapping(db.Model):
-    __tablename__ = 'co_mapping'
+class COData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    student_marks_id = db.Column(db.Integer, db.ForeignKey('student_marks.id'), nullable=False, index=True)
-    unit_test_number = db.Column(db.Integer, nullable=False)  # 1 for UT1
-    question_number = db.Column(db.String(10), nullable=False)  # e.g., "1a", "2b", "3a"
-    co_value = db.Column(db.String(10))  # CO value (e.g., "CO1", "CO2")
-    __table_args__ = (db.UniqueConstraint('student_marks_id', 'unit_test_number', 'question_number', name='unique_co_mapping'),)
+    co = db.Column(db.String(10), nullable=False)
+    q1a = db.Column(db.Float, nullable=False, default=0)
+    q1b = db.Column(db.Float, nullable=False, default=0)
+    q1c = db.Column(db.Float, nullable=False, default=0)
+    q1d = db.Column(db.Float, nullable=False, default=0)
+    q1e = db.Column(db.Float, nullable=False, default=0)
+    q1f = db.Column(db.Float, nullable=False, default=0)
+    q2a = db.Column(db.Float, nullable=False, default=0)
+    q2b = db.Column(db.Float, nullable=False, default=0)
+    q3a = db.Column(db.Float, nullable=False, default=0)
+    q3b = db.Column(db.Float, nullable=False, default=0)
+    avg = db.Column(db.Float, nullable=False, default=0)
+    perc = db.Column(db.Float, nullable=False, default=0)
 
 class CourseExitForm(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -616,85 +645,77 @@ def delete_student():
     return jsonify({'message': 'Student deleted successfully'})
 
 
-@app.route('/cgpa_calculation')
-def cgpa_calculation():
-    return render_template('cgpa_calculation.html')
+@app.route('/unit_test_one')
+def unit_test_one():
+    return render_template('unit_test_one.html')
 
-@app.route('/save_data', methods=['POST'])
-def save_course_data():
-    data = request.get_json()
-    if not data or 'student_id' not in data:
-        return jsonify({'error': 'Invalid data'}), 400
+@app.route('/upload_unit1', methods=['POST'])
+def upload_unit1():
+    try:
+        # Get the uploaded file from the form
+        file = request.files['csv_file']
+        
+        if file and file.filename.endswith('.csv'):
+            # Read the file as a CSV
+            file_content = file.stream.read().decode('utf-8')  # Read file as binary, then decode as utf-8
+            csv_reader = csv.reader(file_content.splitlines())
 
-    student = StudentMarks.query.filter_by(student_id=data['student_id']).first()
-    if not student:
-        student = StudentMarks(student_id=data['student_id'])
-        db.session.add(student)
+            # Skip the header row
+            next(csv_reader)
 
-    student.avg_unit_test_marks = data['avg_unit_test_marks']
-    student.external_exam = data['external_exam']
-    student.orals = data['orals']
-    student.term_work = data['term_work']
-    student.cgpa = data['cgpa']
+            # Process CSV data
+            data = []
+            for row in csv_reader:
+                data.append(row)
 
-    # Clear and update Unit Test Marks for UT1
-    UnitTestMarks.query.filter_by(student_marks_id=student.id, unit_test_number=1).delete()
-    for ut in data['unit_test_marks']:
-        if ut['unit_test_number'] == 1:  # Only UT1 based on HTML
-            ut_record = UnitTestMarks(
-                student_marks_id=student.id,
-                unit_test_number=ut['unit_test_number'],
-                question_number=ut['question_number'],
-                marks=ut['marks']
-            )
-            db.session.add(ut_record)
+            # Return the data as JSON for use on the frontend
+            return jsonify({'status': 'success', 'data': data})
 
-    # Clear and update CO Mapping for UT1
-    CO_Mapping.query.filter_by(student_marks_id=student.id, unit_test_number=1).delete()
-    for co in data['co_mapping']:
-        if co['unit_test_number'] == 1:  # Only UT1 based on HTML
-            co_record = CO_Mapping(
-                student_marks_id=student.id,
-                unit_test_number=co['unit_test_number'],
-                question_number=co['question_number'],
-                co_value=co['co_value']
-            )
-            db.session.add(co_record)
-
-    db.session.commit()
-    return jsonify({'message': 'Data saved successfully'})
-
-@app.route('/load_data', methods=['GET'])
-def load_data():
-    roll_no = request.args.get('roll_no')
+        else:
+            return jsonify({'error': 'Invalid file format. Please upload a CSV file.'})
     
-    if not roll_no:
-        return jsonify({"error": "Missing roll_no parameter"}), 400
+    except Exception as e:
+        return jsonify({'error': f'Error processing CSV file: {str(e)}'})
 
-    student = StudentMarks.query.filter_by(student_id=roll_no).first()
-    
-    if not student:
-        return jsonify({"message": "No data found"}), 404
+# Save data endpoint
 
-    unit_test_marks = UnitTestMarks.query.filter_by(student_marks_id=student.id, unit_test_number=1).all()
-    co_mapping = CO_Mapping.query.filter_by(student_marks_id=student.id, unit_test_number=1).all()
 
-    return jsonify({
-        "avg_unit_test_marks": student.avg_unit_test_marks,
-        "external_exam": student.external_exam,
-        "orals": student.orals,
-        "term_work": student.term_work,
-        "cgpa": student.cgpa,
-        "unit_test_marks": [
-            {"unit_test_number": ut.unit_test_number, "question_number": ut.question_number, "marks": ut.marks}
-            for ut in unit_test_marks
-        ],
-        "co_mapping": [
-            {"unit_test_number": co.unit_test_number, "question_number": co.question_number, "co_value": co.co_value}
-            for co in co_mapping
+@app.route('/load_unit1', methods=['GET'])
+def load_unit1():
+    try:
+        students = StudentMarks.query.all()
+        summary = SummaryData.query.first() or SummaryData()
+        co_data = COData.query.all()
+
+        student_data = [
+            [s.roll_no, s.name, s.q1a, s.q1b, s.q1c, s.q1d, s.q1e, s.q1f, s.q2a, s.q2b, s.q3a, s.q3b]
+            for s in students
         ]
-    })
+        summary_data = {
+            'q1a_avg': summary.q1a_avg, 'q1b_avg': summary.q1b_avg, 'q1c_avg': summary.q1c_avg,
+            'q1d_avg': summary.q1d_avg, 'q1e_avg': summary.q1e_avg, 'q1f_avg': summary.q1f_avg,
+            'q2a_avg': summary.q2a_avg, 'q2b_avg': summary.q2b_avg, 'q3a_avg': summary.q3a_avg,
+            'q3b_avg': summary.q3b_avg, 'total_avg': summary.total_avg,
+            'q1a_perc': summary.q1a_perc, 'q1b_perc': summary.q1b_perc, 'q1c_perc': summary.q1c_perc,
+            'q1d_perc': summary.q1d_perc, 'q1e_perc': summary.q1e_perc, 'q1f_perc': summary.q1f_perc,
+            'q2a_perc': summary.q2a_perc, 'q2b_perc': summary.q2b_perc, 'q3a_perc': summary.q3a_perc,
+            'q3b_perc': summary.q3b_perc, 'total_perc': summary.total_perc
+        }
+        co_data_list = [
+            {
+                'co': c.co, 'q1a': c.q1a, 'q1b': c.q1b, 'q1c': c.q1c, 'q1d': c.q1d,
+                'q1e': c.q1e, 'q1f': c.q1f, 'q2a': c.q2a, 'q2b': c.q2b, 'q3a': c.q3a,
+                'q3b': c.q3b, 'avg': c.avg, 'perc': c.perc
+            } for c in co_data
+        ]
 
+        return jsonify({
+            'students': student_data,
+            'summary': summary_data,
+            'co': co_data_list
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/direct_assesment')
 def direct_assesment():
