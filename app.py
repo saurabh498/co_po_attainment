@@ -158,6 +158,75 @@ class COData(db.Model):
     avg = db.Column(db.Float, nullable=False, default=0)
     perc = db.Column(db.Float, nullable=False, default=0)
 
+##unit test2
+class Student2(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    roll_no = db.Column(db.String(20), nullable=False, unique=True)
+    full_name = db.Column(db.String(255), nullable=False)
+
+    def to_dict(self):
+        return {
+            'roll_no': self.roll_no,
+            'full_name': self.full_name
+        }
+
+class StudentMarks2(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    roll_no = db.Column(db.String(20), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    q1a = db.Column(db.Float, nullable=False, default=0)
+    q1b = db.Column(db.Float, nullable=False, default=0)
+    q1c = db.Column(db.Float, nullable=False, default=0)
+    q1d = db.Column(db.Float, nullable=False, default=0)
+    q1e = db.Column(db.Float, nullable=False, default=0)
+    q1f = db.Column(db.Float, nullable=False, default=0)
+    q2a = db.Column(db.Float, nullable=False, default=0)
+    q2b = db.Column(db.Float, nullable=False, default=0)
+    q3a = db.Column(db.Float, nullable=False, default=0)
+    q3b = db.Column(db.Float, nullable=False, default=0)
+    total = db.Column(db.Float, nullable=False, default=0)
+
+class SummaryData2(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    q1a_avg = db.Column(db.Float, nullable=False, default=0)
+    q1b_avg = db.Column(db.Float, nullable=False, default=0)
+    q1c_avg = db.Column(db.Float, nullable=False, default=0)
+    q1d_avg = db.Column(db.Float, nullable=False, default=0)
+    q1e_avg = db.Column(db.Float, nullable=False, default=0)
+    q1f_avg = db.Column(db.Float, nullable=False, default=0)
+    q2a_avg = db.Column(db.Float, nullable=False, default=0)
+    q2b_avg = db.Column(db.Float, nullable=False, default=0)
+    q3a_avg = db.Column(db.Float, nullable=False, default=0)
+    q3b_avg = db.Column(db.Float, nullable=False, default=0)
+    total_avg = db.Column(db.Float, nullable=False, default=0)
+    q1a_perc = db.Column(db.Float, nullable=False, default=0)
+    q1b_perc = db.Column(db.Float, nullable=False, default=0)
+    q1c_perc = db.Column(db.Float, nullable=False, default=0)
+    q1d_perc = db.Column(db.Float, nullable=False, default=0)
+    q1e_perc = db.Column(db.Float, nullable=False, default=0)
+    q1f_perc = db.Column(db.Float, nullable=False, default=0)
+    q2a_perc = db.Column(db.Float, nullable=False, default=0)
+    q2b_perc = db.Column(db.Float, nullable=False, default=0)
+    q3a_perc = db.Column(db.Float, nullable=False, default=0)
+    q3b_perc = db.Column(db.Float, nullable=False, default=0)
+    total_perc = db.Column(db.Float, nullable=False, default=0)
+
+class COData2(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    co = db.Column(db.String(10), nullable=False)
+    q1a = db.Column(db.Float, nullable=False, default=0)
+    q1b = db.Column(db.Float, nullable=False, default=0)
+    q1c = db.Column(db.Float, nullable=False, default=0)
+    q1d = db.Column(db.Float, nullable=False, default=0)
+    q1e = db.Column(db.Float, nullable=False, default=0)
+    q1f = db.Column(db.Float, nullable=False, default=0)
+    q2a = db.Column(db.Float, nullable=False, default=0)
+    q2b = db.Column(db.Float, nullable=False, default=0)
+    q3a = db.Column(db.Float, nullable=False, default=0)
+    q3b = db.Column(db.Float, nullable=False, default=0)
+    avg = db.Column(db.Float, nullable=False, default=0)
+    perc = db.Column(db.Float, nullable=False, default=0)
+
 class CourseExitForm(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     roll_no = db.Column(db.String(20), unique=True, nullable=False)
@@ -989,8 +1058,136 @@ def upload_unit2():
             return jsonify({'error': 'Invalid file format. Please upload a CSV file.'})
     
     except Exception as e:
-        return jsonify({'error': f'Error processing CSV file: {str(e)}'}) 
-    
+        return jsonify({'error': f'Error processing CSV file: {str(e)}'})
+
+# Save data endpoint
+@app.route('/save_unit2', methods=['POST'])
+def save_unit2():
+    try:
+        data = request.get_json()
+        if not data or 'students' not in data or 'summary' not in data or 'co' not in data:
+            return jsonify({'error': 'Invalid data format'}), 400
+
+        # Clear existing data (optional, depending on your requirements)
+        db.session.query(StudentMarks).delete()
+        db.session.query(SummaryData).delete()
+        db.session.query(COData).delete()
+
+        # Save student marks
+        for student in data['students']:
+            if len(student) < 12:
+                continue  # Skip invalid rows
+            total = sum(float(mark) for mark in student[2:12] if mark)  # Calculate total
+            student_marks = StudentMarks(
+                roll_no=student[0],
+                name=student[1],
+                q1a=float(student[2]) if student[2] else 0,
+                q1b=float(student[3]) if student[3] else 0,
+                q1c=float(student[4]) if student[4] else 0,
+                q1d=float(student[5]) if student[5] else 0,
+                q1e=float(student[6]) if student[6] else 0,
+                q1f=float(student[7]) if student[7] else 0,
+                q2a=float(student[8]) if student[8] else 0,
+                q2b=float(student[9]) if student[9] else 0,
+                q3a=float(student[10]) if student[10] else 0,
+                q3b=float(student[11]) if student[11] else 0,
+                total=total
+            )
+            db.session.add(student_marks)
+
+        # Save summary data
+        summary = data['summary']
+        summary_data = SummaryData(
+            q1a_avg=float(summary['q1a_avg']) if summary['q1a_avg'] else 0,
+            q1b_avg=float(summary['q1b_avg']) if summary['q1b_avg'] else 0,
+            q1c_avg=float(summary['q1c_avg']) if summary['q1c_avg'] else 0,
+            q1d_avg=float(summary['q1d_avg']) if summary['q1d_avg'] else 0,
+            q1e_avg=float(summary['q1e_avg']) if summary['q1e_avg'] else 0,
+            q1f_avg=float(summary['q1f_avg']) if summary['q1f_avg'] else 0,
+            q2a_avg=float(summary['q2a_avg']) if summary['q2a_avg'] else 0,
+            q2b_avg=float(summary['q2b_avg']) if summary['q2b_avg'] else 0,
+            q3a_avg=float(summary['q3a_avg']) if summary['q3a_avg'] else 0,
+            q3b_avg=float(summary['q3b_avg']) if summary['q3b_avg'] else 0,
+            total_avg=float(summary['total_avg']) if summary['total_avg'] else 0,
+            q1a_perc=float(summary['q1a_perc']) if summary['q1a_perc'] else 0,
+            q1b_perc=float(summary['q1b_perc']) if summary['q1b_perc'] else 0,
+            q1c_perc=float(summary['q1c_perc']) if summary['q1c_perc'] else 0,
+            q1d_perc=float(summary['q1d_perc']) if summary['q1d_perc'] else 0,
+            q1e_perc=float(summary['q1e_perc']) if summary['q1e_perc'] else 0,
+            q1f_perc=float(summary['q1f_perc']) if summary['q1f_perc'] else 0,
+            q2a_perc=float(summary['q2a_perc']) if summary['q2a_perc'] else 0,
+            q2b_perc=float(summary['q2b_perc']) if summary['q2b_perc'] else 0,
+            q3a_perc=float(summary['q3a_perc']) if summary['q3a_perc'] else 0,
+            q3b_perc=float(summary['q3b_perc']) if summary['q3b_perc'] else 0,
+            total_perc=float(summary['total_perc']) if summary['total_perc'] else 0
+        )
+        db.session.add(summary_data)
+
+        # Save CO data
+        for co in data['co']:
+            co_data = COData(
+                co=co['co'],
+                q1a=float(co['q1a']) if co['q1a'] else 0,
+                q1b=float(co['q1b']) if co['q1b'] else 0,
+                q1c=float(co['q1c']) if co['q1c'] else 0,
+                q1d=float(co['q1d']) if co['q1d'] else 0,
+                q1e=float(co['q1e']) if co['q1e'] else 0,
+                q1f=float(co['q1f']) if co['q1f'] else 0,
+                q2a=float(co['q2a']) if co['q2a'] else 0,
+                q2b=float(co['q2b']) if co['q2b'] else 0,
+                q3a=float(co['q3a']) if co['q3a'] else 0,
+                q3b=float(co['q3b']) if co['q3b'] else 0,
+                avg=float(co['avg']) if co['avg'] else 0,
+                perc=float(co['perc']) if co['perc'] else 0
+            )
+            db.session.add(co_data)
+
+        # Commit changes to the database
+        db.session.commit()
+        return jsonify({'message': 'Data saved successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error saving data: {str(e)}'}), 500
+
+@app.route('/load_unit2', methods=['GET'])
+def load_unit2():
+    try:
+        students = StudentMarks.query.all()
+        summary = SummaryData.query.first() or SummaryData()
+        co_data = COData.query.all()
+
+        student_data = [
+            [s.roll_no, s.name, s.q1a, s.q1b, s.q1c, s.q1d, s.q1e, s.q1f, s.q2a, s.q2b, s.q3a, s.q3b]
+            for s in students
+        ]
+        summary_data = {
+            'q1a_avg': summary.q1a_avg, 'q1b_avg': summary.q1b_avg, 'q1c_avg': summary.q1c_avg,
+            'q1d_avg': summary.q1d_avg, 'q1e_avg': summary.q1e_avg, 'q1f_avg': summary.q1f_avg,
+            'q2a_avg': summary.q2a_avg, 'q2b_avg': summary.q2b_avg, 'q3a_avg': summary.q3a_avg,
+            'q3b_avg': summary.q3b_avg, 'total_avg': summary.total_avg,
+            'q1a_perc': summary.q1a_perc, 'q1b_perc': summary.q1b_perc, 'q1c_perc': summary.q1c_perc,
+            'q1d_perc': summary.q1d_perc, 'q1e_perc': summary.q1e_perc, 'q1f_perc': summary.q1f_perc,
+            'q2a_perc': summary.q2a_perc, 'q2b_perc': summary.q2b_perc, 'q3a_perc': summary.q3a_perc,
+            'q3b_perc': summary.q3b_perc, 'total_perc': summary.total_perc
+        }
+        co_data_list = [
+            {
+                'co': c.co, 'q1a': c.q1a, 'q1b': c.q1b, 'q1c': c.q1c, 'q1d': c.q1d,
+                'q1e': c.q1e, 'q1f': c.q1f, 'q2a': c.q2a, 'q2b': c.q2b, 'q3a': c.q3a,
+                'q3b': c.q3b, 'avg': c.avg, 'perc': c.perc
+            } for c in co_data
+        ]
+
+        return jsonify({
+            'students': student_data,
+            'summary': summary_data,
+            'co': co_data_list
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/students_analysis2')
 def students_analysis2():
     return render_template('students_analysis2.html')   
