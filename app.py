@@ -803,6 +803,172 @@ def load_unit1():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/students_analysis')
+def students_analysis():
+    return render_template('students_analysis.html')
+
+@app.route('/save_data_analysis', methods=['POST'])
+def save_data_analysis():
+    data = request.json
+    try:
+        for student in data:
+            percentage_value = student['percentage'].replace('%', '').strip()
+            new_student = StudentPerformance(
+                roll_no=student['roll_no'],
+                name=student['name'],
+                test_marks=float(student['marks']),
+                test_percentage=float(percentage_value),
+                category=student['category'],
+                observation=student['observation']
+            )
+            db.session.add(new_student)
+        db.session.commit()
+        return jsonify({"message": "Data saved successfully!"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/view_saved_data', methods=['GET'])
+def view_saved_data():
+    try:
+        students = StudentPerformance.query.all()  # Fetch all records
+        student_list = [{
+            "roll_no": student.roll_no,
+            "name": student.name,
+            "marks": student.test_marks,
+            "percentage": student.test_percentage,
+            "category": student.category,
+            "observation": student.observation
+        } for student in students]
+
+        return jsonify(student_list), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route("/update_analysis/<roll_no>", methods=["PATCH"])
+def update_analysis(roll_no):
+    try:
+        data = request.json
+        new_roll_no = data.get("roll_no")  # Match frontend key
+        name = data.get("name")
+        marks = float(data.get("marks"))  # Ensure marks are numeric
+
+        # Check if the new roll number already exists (excluding the current student)
+        existing_student = StudentPerformance.query.filter_by(roll_no=new_roll_no).first()
+        if existing_student and existing_student.roll_no != roll_no:
+            return jsonify({"error": "Roll Number already exists!"}), 400
+
+        # Fetch student from database
+        student = StudentPerformance.query.filter_by(roll_no=roll_no).first()
+        if not student:
+            return jsonify({"error": "Student not found!"}), 404
+
+        # Update values
+        student.roll_no = new_roll_no
+        student.name = name
+        student.test_marks = marks
+
+        # Recalculate Percentage, Category, and Observation
+        max_marks = 20  # Class test total marks
+        student.test_percentage = (marks / max_marks) * 100
+
+        if student.test_percentage >= 75:
+            student.category = "Bright"
+            student.observation = "Excellent Performance"
+        elif student.test_percentage < 40:
+            student.category = "Fail"
+            student.observation = "Needs Improvement"
+        elif student.test_percentage >= 40 and student.test_percentage <= 50:
+            student.category = "Weak"
+            student.observation = "Needs To Study Hard "    
+        else:
+            student.category = "Average"
+            student.observation = "Can Do Better"
+
+        # Commit changes
+        db.session.commit()
+        return jsonify({
+            "message": "Student data updated successfully!",
+            "student": {
+                "roll_no": student.roll_no,
+                "name": student.name,
+                "marks": student.test_marks,
+                "percentage": student.test_percentage,
+                "category": student.category,
+                "observation": student.observation
+            }
+        }), 200
+
+    except ValueError as e:
+        return jsonify({"error": "Invalid marks value provided!"}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to update student: {str(e)}"}), 500
+
+@app.route('/delete_analysis/<roll_no>', methods=['DELETE'])
+def delete_analysis(roll_no):
+    student = StudentPerformance.query.filter_by(roll_no=roll_no).first()
+    
+    if not student:
+        return jsonify({"error": "Student not found"}), 404  # Return error if roll number not found
+
+    db.session.delete(student)
+    db.session.commit()
+    
+    return jsonify({"message": f"Record for Roll No. {roll_no} deleted successfully!"})
+
+# Helper function for attainment levels
+def get_attainment_level(percentage, context):
+    percentage = float(percentage)
+    if context == 'CES':
+        if percentage >= 85:
+            return 3
+        elif percentage >= 80:
+            return 2
+        return 1
+    else:  # SEE or CIE
+        if percentage >= 75:
+            return 3
+        elif percentage >= 50:
+            return 2
+        return 1    
+    
+@app.route('/unit_test_two')
+def unit_test_two():
+    return render_template('unit_test_two.html')   
+
+@app.route('/upload_unit2', methods=['POST'])
+def upload_unit2():
+    try:
+        # Get the uploaded file from the form
+        file = request.files['csv_file']
+        
+        if file and file.filename.endswith('.csv'):
+            # Read the file as a CSV
+            file_content = file.stream.read().decode('utf-8')  # Read file as binary, then decode as utf-8
+            csv_reader = csv.reader(file_content.splitlines())
+
+            # Skip the header row
+            next(csv_reader)
+
+            # Process CSV data
+            data = []
+            for row in csv_reader:
+                data.append(row)
+
+            # Return the data as JSON for use on the frontend
+            return jsonify({'status': 'success', 'data': data})
+
+        else:
+            return jsonify({'error': 'Invalid file format. Please upload a CSV file.'})
+    
+    except Exception as e:
+        return jsonify({'error': f'Error processing CSV file: {str(e)}'}) 
+    
+@app.route('/students_analysis2')
+def students_analysis2():
+    return render_template('students_analysis2.html')    
 
 @app.route('/direct_assesment')
 def direct_assesment():
@@ -1115,135 +1281,7 @@ def get_indirect_summary():
     except Exception as e:
         return jsonify({"message": f"Error fetching summary data: {str(e)}"}), 500
 
-@app.route('/students_analysis')
-def students_analysis():
-    return render_template('students_analysis.html')
 
-@app.route('/save_data_analysis', methods=['POST'])
-def save_data_analysis():
-    data = request.json
-    try:
-        for student in data:
-            percentage_value = student['percentage'].replace('%', '').strip()
-            new_student = StudentPerformance(
-                roll_no=student['roll_no'],
-                name=student['name'],
-                test_marks=float(student['marks']),
-                test_percentage=float(percentage_value),
-                category=student['category'],
-                observation=student['observation']
-            )
-            db.session.add(new_student)
-        db.session.commit()
-        return jsonify({"message": "Data saved successfully!"}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/view_saved_data', methods=['GET'])
-def view_saved_data():
-    try:
-        students = StudentPerformance.query.all()  # Fetch all records
-        student_list = [{
-            "roll_no": student.roll_no,
-            "name": student.name,
-            "marks": student.test_marks,
-            "percentage": student.test_percentage,
-            "category": student.category,
-            "observation": student.observation
-        } for student in students]
-
-        return jsonify(student_list), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-@app.route("/update_analysis/<roll_no>", methods=["PATCH"])
-def update_analysis(roll_no):
-    try:
-        data = request.json
-        new_roll_no = data.get("roll_no")  # Match frontend key
-        name = data.get("name")
-        marks = float(data.get("marks"))  # Ensure marks are numeric
-
-        # Check if the new roll number already exists (excluding the current student)
-        existing_student = StudentPerformance.query.filter_by(roll_no=new_roll_no).first()
-        if existing_student and existing_student.roll_no != roll_no:
-            return jsonify({"error": "Roll Number already exists!"}), 400
-
-        # Fetch student from database
-        student = StudentPerformance.query.filter_by(roll_no=roll_no).first()
-        if not student:
-            return jsonify({"error": "Student not found!"}), 404
-
-        # Update values
-        student.roll_no = new_roll_no
-        student.name = name
-        student.test_marks = marks
-
-        # Recalculate Percentage, Category, and Observation
-        max_marks = 20  # Class test total marks
-        student.test_percentage = (marks / max_marks) * 100
-
-        if student.test_percentage >= 75:
-            student.category = "Bright"
-            student.observation = "Excellent Performance"
-        elif student.test_percentage < 40:
-            student.category = "Fail"
-            student.observation = "Needs Improvement"
-        elif student.test_percentage >= 40 and student.test_percentage <= 50:
-            student.category = "Weak"
-            student.observation = "Needs To Study Hard "    
-        else:
-            student.category = "Average"
-            student.observation = "Can Do Better"
-
-        # Commit changes
-        db.session.commit()
-        return jsonify({
-            "message": "Student data updated successfully!",
-            "student": {
-                "roll_no": student.roll_no,
-                "name": student.name,
-                "marks": student.test_marks,
-                "percentage": student.test_percentage,
-                "category": student.category,
-                "observation": student.observation
-            }
-        }), 200
-
-    except ValueError as e:
-        return jsonify({"error": "Invalid marks value provided!"}), 400
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to update student: {str(e)}"}), 500
-
-@app.route('/delete_analysis/<roll_no>', methods=['DELETE'])
-def delete_analysis(roll_no):
-    student = StudentPerformance.query.filter_by(roll_no=roll_no).first()
-    
-    if not student:
-        return jsonify({"error": "Student not found"}), 404  # Return error if roll number not found
-
-    db.session.delete(student)
-    db.session.commit()
-    
-    return jsonify({"message": f"Record for Roll No. {roll_no} deleted successfully!"})
-
-# Helper function for attainment levels
-def get_attainment_level(percentage, context):
-    percentage = float(percentage)
-    if context == 'CES':
-        if percentage >= 85:
-            return 3
-        elif percentage >= 80:
-            return 2
-        return 1
-    else:  # SEE or CIE
-        if percentage >= 75:
-            return 3
-        elif percentage >= 50:
-            return 2
-        return 1
 
 # Routes
 @app.route('/Co_Attainment_Cal')
