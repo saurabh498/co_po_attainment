@@ -612,15 +612,26 @@
             const rows = document.querySelectorAll("#student-marks-body tr");
             const data = [];
 
-            // Collect student data
-            rows.forEach(row => {
+            // Collect student data with validation
+            for (let row of rows) {
                 const rowData = [];
                 const inputs = row.querySelectorAll("input");
-                inputs.forEach(input => {
-                    rowData.push(input.value);
+                let isValid = true;
+                inputs.forEach((input, index) => {
+                    let value = input.value || '0'; // Default to '0' for empty inputs
+                    if (index < 2 && !input.value) { // Check roll_no and name
+                        isValid = false;
+                        alert('Roll No and Name are required for all students.');
+                        return;
+                    }
+                    rowData.push(value);
                 });
-                data.push(rowData);
-            });
+                if (isValid) {
+                    data.push(rowData);
+                } else {
+                    return; // Stop saving if validation fails
+                }
+            }
 
             // Collect summary table data
             const summary = {
@@ -720,9 +731,11 @@
                 })
                 .then(data => {
                     console.log('Success:', data);
+                    alert('Data saved successfully!');
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    alert('Error saving data: ' + error.message);
                 });
         }
 
