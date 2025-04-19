@@ -3,6 +3,7 @@
 
 <head>
     <title>Student Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -80,7 +81,6 @@
             margin-top: 10px;
         }
 
-        /* Edit & Delete Buttons */
         .action-btn {
             padding: 5px 10px;
             font-size: 14px;
@@ -98,6 +98,14 @@
         .edit-btn:hover {
             background-color: #e0a800;
         }
+
+        .save-btn {
+            background-color: #28a745;
+        }
+
+        .save-btn:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 
@@ -109,8 +117,8 @@
                 <tr>
                     <th>Roll No.</th>
                     <th>Name</th>
-                    <th>Class Test 1 Marks</th>
-                    <th>Class Test 1 %</th>
+                    <th>Class Test 2 Marks</th>
+                    <th>Class Test 2 %</th>
                     <th>Bright/Weak Student</th>
                     <th>Observation</th>
                 </tr>
@@ -121,16 +129,14 @@
             <input type="file" id="csvFile" accept=".csv">
             <button class="upload-btn" onclick="uploadCsvFile()">Upload CSV</button>
         </div>
-
         <div class="button-container">
             <button onclick="addRow()">Add Row</button>
             <button onclick="processData()">Analyze Performance</button>
             <button id="saveBtn" onclick="saveAnalysis()">Save Data</button>
             <button onclick="viewSavedData()">View Saved Data</button>
             <button onclick="deleteAnalysis()">Delete</button>
-            <button onclick="unit_test_two()">Next</button>
+            <button onclick="direct_assesment()">Next</button>
         </div>
-        <!-- Naya Table -->
         <h2>Saved Analysis Data</h2>
         <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search by roll no or name">
         <table id="savedStudentTable">
@@ -138,8 +144,8 @@
                 <tr>
                     <th>Roll No.</th>
                     <th>Name</th>
-                    <th>Class Test 1 Marks</th>
-                    <th>Class Test 1 %</th>
+                    <th>Class Test 2 Marks</th>
+                    <th>Class Test 2 %</th>
                     <th>Bright/Weak Student</th>
                     <th>Observation</th>
                     <th>Actions</th>
@@ -148,77 +154,118 @@
             <tbody id="savedTableBody"></tbody>
         </table>
     </div>
-
     <script>
-
         function addRow() {
             const tableBody = document.getElementById("tableBody");
-
             const newRow = document.createElement("tr");
             newRow.innerHTML = `
-        <td contenteditable="true"></td>  <!-- Roll No -->
-        <td contenteditable="true"></td>  <!-- Name -->
-        <td contenteditable="true"></td>  <!-- Marks -->
-        <td></td>  <!-- Percentage (Auto calculated) -->
-        <td></td>  <!-- Category (Auto calculated) -->
-        <td></td>  <!-- Observation (Auto calculated) -->
-    `;
-
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            `;
             tableBody.appendChild(newRow);
         }
 
-
         function uploadCsvFile() {
             const fileInput = document.getElementById("csvFile");
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const lines = event.target.result.split("\n").slice(1);
-                const tableBody = document.getElementById("tableBody");
-                tableBody.innerHTML = "";
-                lines.forEach(line => {
-                    const cols = line.split(",");
-                    if (cols.length > 1) {
-                        const row = `<tr><td>${cols[0]}</td><td>${cols[1]}</td><td>${cols[2]}</td><td>${cols[3]}</td><td></td><td></td></tr>`;
-                        tableBody.innerHTML += row;
+            const file = fileInput.files[0];
+            if (!file) return alert("Please select a CSV file!");
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: header => header.trim().toLowerCase().replace(/^\uFEFF/, ''), // Remove BOM and normalize
+                complete: function (results) {
+                    console.log("Parsed headers:", results.meta.fields);
+                    console.log("Parsed data (first 5 rows):", results.data.slice(0, 5));
+                    console.log("Errors:", results.errors);
+
+                    // Validate headers
+                    const expectedHeaders = ["roll", "name", "ct2"];
+                    const actualHeaders = results.meta.fields?.map(h => h.trim().toLowerCase()) || [];
+                    if (!expectedHeaders.every(h => actualHeaders.includes(h))) {
+                        alert("Invalid CSV headers! Expected: roll, name, ct2. Found: " + (actualHeaders.join(", ") || "none"));
+                        return;
                     }
-                });
-            };
-            reader.readAsText(fileInput.files[0]);
+
+                    const tableBody = document.getElementById("tableBody");
+                    tableBody.innerHTML = "";
+                    if (results.data.length === 0) {
+                        alert("No valid data found in CSV!");
+                        return;
+                    }
+
+                    let invalidRows = [];
+                    results.data.forEach((row, index) => {
+                        const roll = row.roll?.trim();
+                        const name = row.name?.trim();
+                        const rawMarks = row.ct2?.trim();
+                        const marks = parseFloat(rawMarks);
+
+                        console.log(`Row ${index + 2}: roll=${roll}, name=${name}, rawMarks=${rawMarks}, parsedMarks=${marks}`);
+
+                        if (roll && name && !isNaN(marks) && marks >= 0 && marks <= 20) {
+                            const rowElement = document.createElement("tr");
+                            rowElement.innerHTML = `
+                        <td>${roll}</td>
+                        <td>${name}</td>
+                        <td>${marks}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    `;
+                            tableBody.appendChild(rowElement);
+                        } else {
+                            invalidRows.push(`Row ${index + 2}: Roll: ${roll || "missing"}, Name: ${name || "missing"}, Marks: ${rawMarks || "missing"}`);
+                        }
+                    });
+
+                    if (tableBody.children.length === 0) {
+                        alert("No valid rows were added. Check CSV format (expected headers: roll, name, ct2).\nInvalid rows:\n" + invalidRows.join("\n"));
+                    } else if (invalidRows.length > 0) {
+                        alert(`Some rows were invalid and skipped:\n${invalidRows.join("\n")}`);
+                    }
+                },
+                error: function (error) {
+                    alert("Failed to parse CSV: " + error.message);
+                }
+            });
         }
 
         function filterTable() {
             const input = document.getElementById("searchInput").value.toLowerCase();
             const rows = document.querySelectorAll("#savedStudentTable tbody tr");
-
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(input) ? "" : "none";
             });
         }
 
-
-
         function processData() {
-            const maxMarks = 20; // Class Test 1 ka total marks yahan set karein
-
+            const maxMarks = 20;
             document.querySelectorAll("#studentTable tbody tr").forEach(row => {
-                const marks = parseFloat(row.cells[2].textContent);
-                if (isNaN(marks)) return; // Agar marks invalid hain to skip karein
-
-                // Percentage calculate karo
+                const rawMarks = row.cells[2].textContent.trim();
+                const marks = parseFloat(rawMarks);
+                if (isNaN(marks) || marks < 0 || marks > maxMarks) {
+                    row.cells[3].textContent = "Invalid";
+                    row.cells[4].textContent = "N/A";
+                    row.cells[5].textContent = "Invalid marks";
+                    row.className = "weak";
+                    return;
+                }
                 const percentage = (marks / maxMarks) * 100;
                 row.cells[3].textContent = percentage.toFixed(2) + "%";
-
-                // Category aur observation logic
                 let category = "", observation = "";
-
                 if (percentage >= 75) {
                     category = "Bright";
                     row.className = "bright";
                     observation = "Excellent Performance";
                 } else if (percentage < 40) {
                     category = "Fail";
-                    row.className = "Fail";
+                    row.className = "weak";
                     observation = "Needs Improvement";
                 } else if (percentage >= 40 && percentage <= 50) {
                     category = "Weak";
@@ -229,7 +276,6 @@
                     row.className = "improvement";
                     observation = "Can Do Better";
                 }
-
                 row.cells[4].textContent = category;
                 row.cells[5].textContent = observation;
             });
@@ -238,10 +284,15 @@
         function saveAnalysis() {
             const tableData = [];
             document.querySelectorAll("#studentTable tbody tr").forEach(row => {
+                const marks = parseFloat(row.cells[2].textContent.trim());
+                if (isNaN(marks) || marks < 0 || marks > 20) {
+                    alert(`Invalid marks for Roll No. ${row.cells[0].textContent.trim()}. Marks must be between 0 and 20.`);
+                    return;
+                }
                 const student = {
                     roll_no: row.cells[0].textContent.trim(),
                     name: row.cells[1].textContent.trim(),
-                    marks: row.cells[2].textContent.trim(),
+                    marks: marks,
                     percentage: row.cells[3].textContent.trim(),
                     category: row.cells[4].textContent.trim(),
                     observation: row.cells[5].textContent.trim()
@@ -250,39 +301,27 @@
             });
 
             if (tableData.length === 0) {
-                alert("No data to save!");
+                alert("No valid data to save!");
                 return;
             }
 
             const saveButton = document.getElementById("saveBtn");
-            if (!saveButton) {
-                console.error("Save button not found!");
-                return;
-            }
-
             saveButton.disabled = true;
             saveButton.textContent = "Saving...";
 
-            console.log("Sending data:", tableData); // Debug log
-
-            fetch("/save_data_analysis", {
+            fetch("/save_data_analysis2", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(tableData)
             })
                 .then(response => {
-                    console.log("Response status:", response.status); // Debug log
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
-                    console.log("Response data:", data); // Debug log
                     alert(data.message);
                 })
                 .catch(error => {
-                    console.error("Fetch error:", error);
                     alert("Failed to save data: " + error.message);
                 })
                 .finally(() => {
@@ -292,12 +331,17 @@
         }
 
         function viewSavedData() {
-            fetch('/view_saved_data')
-                .then(response => response.json())
+            fetch('/view_saved_data2')
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
                 .then(data => {
-                    const savedTableBody = document.getElementById("savedTableBody");
-                    savedTableBody.innerHTML = ""; // Clear previous data
+                    // Sort data by roll_no (numeric)
+                    data.sort((a, b) => parseInt(a.roll_no) - parseInt(b.roll_no));
 
+                    const savedTableBody = document.getElementById("savedTableBody");
+                    savedTableBody.innerHTML = "";
                     data.forEach(student => {
                         const row = document.createElement("tr");
                         row.innerHTML = `
@@ -308,74 +352,100 @@
                     <td>${student.category}</td>
                     <td>${student.observation}</td>
                     <td>
-                        <button onclick="editRow(this)" style="display:inline-block;">✏️ Edit</button>
-                        <button class="action-btn save-btn" onclick="saveRow(this, '${student.roll_no}')" style="display:none; background-color: #28a745;">💾 Save</button>
+                        <button class="action-btn edit-btn" onclick="editRow(this)">✏️ Edit</button>
+                        <button class="action-btn save-btn" onclick="saveRow(this, '${student.roll_no}')" style="display:none;">💾 Save</button>
                     </td>
                 `;
                         savedTableBody.appendChild(row);
                     });
                 })
-                .catch(error => console.error("Error fetching saved data:", error));
+                .catch(error => {
+                    alert("Failed to fetch saved data: " + error.message);
+                });
         }
-
 
         function editRow(button) {
             const row = button.parentNode.parentNode;
-
-            // Enable editing for Roll No, Name, and Marks
             row.cells[0].contentEditable = "true";
             row.cells[1].contentEditable = "true";
             row.cells[2].contentEditable = "true";
-
-            button.style.display = "none"; // Hide Edit Button
-            row.cells[6].children[1].style.display = "inline"; // Show Save Button
+            button.style.display = "none";
+            row.cells[6].children[1].style.display = "inline";
         }
 
         function saveRow(button, oldRollNo) {
             const row = button.parentNode.parentNode;
+            const rawMarks = row.cells[2].textContent.trim();
+            const marks = parseFloat(rawMarks);
+            if (isNaN(marks) || marks < 0 || marks > 20) {
+                alert("Invalid marks! Must be a number between 0 and 20.");
+                return;
+            }
+            const maxMarks = 20;
+            const percentage = (marks / maxMarks) * 100;
+            let category = "", observation = "";
+            if (percentage >= 75) {
+                category = "Bright";
+                observation = "Excellent Performance";
+            } else if (percentage < 40) {
+                category = "Fail";
+                observation = "Needs Improvement";
+            } else if (percentage >= 40 && percentage <= 50) {
+                category = "Weak";
+                observation = "Needs TO Study Hard";
+            } else {
+                category = "Average";
+                observation = "Can Do Better";
+            }
             const updatedData = {
-                roll_no: row.cells[0].textContent,
-                name: row.cells[1].textContent,
-                marks: row.cells[2].textContent
+                roll_no: row.cells[0].textContent.trim(),
+                name: row.cells[1].textContent.trim(),
+                marks: marks,
+                percentage: percentage.toFixed(2) + "%",
+                category: category,
+                observation: observation
             };
-
-            fetch(`/update_analysis/${oldRollNo}`, {
+            fetch(`/update_analysis2/${oldRollNo}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(updatedData)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
                 .then(data => {
                     alert(data.message);
-                    viewSavedData(); // Refresh Table after Updating
+                    viewSavedData();
                 })
-                .catch(error => console.error("Error:", error));
+                .catch(error => {
+                    alert("Failed to update data: " + error.message);
+                });
         }
-
 
         function deleteAnalysis() {
             const rollNo = prompt("Enter the Roll No. of the student to delete:");
-            if (!rollNo) return; // Exit if user cancels
-
-            fetch(`/delete_analysis/${rollNo}`, {
+            if (!rollNo) return;
+            fetch(`/delete_analysis2/${rollNo}`, {
                 method: "DELETE"
             })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.message); // Show success message
-                    viewSavedData(); // Refresh table after deletion
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
                 })
-                .catch(error => console.error("Error:", error));
+                .then(data => {
+                    alert(data.message);
+                    viewSavedData();
+                })
+                .catch(error => {
+                    alert("Failed to delete data: " + error.message);
+                });
         }
 
-
-        function unit_test_two() {
-            window.location.href = "/unit_test_two";
+        function direct_assesment() {
+            window.location.href = "/direct_assesment";
         }
-
-
     </script>
-
 </body>
 
 </html>

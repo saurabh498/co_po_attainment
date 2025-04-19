@@ -6,6 +6,7 @@ from io import StringIO
 import os
 from sqlite3 import Cursor
 import traceback
+import uuid
 from venv import logger
 from flask import Flask, Response, make_response, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -274,6 +275,30 @@ class StudentPerformance(db.Model):
     category = db.Column(db.String(20), nullable=False)  # Bright, Weak, Average
     observation = db.Column(db.String(255), nullable=False)
 
+#student analysis 2
+class StudentAnalysis(db.Model):
+    __tablename__ = 'students_analysis2'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    roll_no = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    marks = db.Column(db.Float, nullable=False)
+    percentage = db.Column(db.String(10), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    observation = db.Column(db.String(200), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'roll_no': self.roll_no,
+            'name': self.name,
+            'marks': self.marks,
+            'percentage': self.percentage,
+            'category': self.category,
+            'observation': self.observation
+        }
+
+    
 # Define Models
 class DirectAttainment(db.Model):
     __tablename__ = 'direct_attainment'
@@ -968,7 +993,123 @@ def upload_unit2():
     
 @app.route('/students_analysis2')
 def students_analysis2():
-    return render_template('students_analysis2.html')    
+    return render_template('students_analysis2.html')   
+
+@app.route('/save_data_analysis2', methods=['POST'])
+def save_data_analysis2():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'message': 'No data provided!'}), 400
+
+        for student_data in data:
+            # Validate required fields
+            if not all(key in student_data for key in ['roll_no', 'name', 'marks', 'percentage', 'category', 'observation']):
+                return jsonify({'message': f'Missing required fields in student data: {student_data}'}), 400
+
+            # Check for duplicate roll_no
+            existing_student = StudentAnalysis.query.filter_by(roll_no=student_data['roll_no']).first()
+            if existing_student:
+                return jsonify({'message': f"Roll number {student_data['roll_no']} already exists!"}), 409
+
+            # Validate marks
+            try:
+                marks = float(student_data['marks'])
+                if not (0 <= marks <= 20):
+                    return jsonify({'message': f"Invalid marks for roll {student_data['roll_no']}: {marks}. Must be between 0 and 20."}), 400
+            except (ValueError, TypeError):
+                return jsonify({'message': f"Invalid marks format for roll {student_data['roll_no']}: {student_data['marks']}"}), 400
+
+            student = StudentAnalysis(
+                roll_no=student_data['roll_no'],
+                name=student_data['name'],
+                marks=marks,
+                percentage=student_data['percentage'],
+                category=student_data['category'],
+                observation=student_data['observation']
+            )
+            db.session.add(student)
+
+        db.session.commit()
+        return jsonify({'message': 'Data saved successfully!'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Failed to save data: {str(e)}'}), 500
+
+@app.route('/view_saved_data2', methods=['GET'])
+def view_saved_data2():
+    try:
+        students = StudentAnalysis.query.order_by(func.cast(StudentAnalysis.roll_no, db.Integer)).all()
+        return jsonify([student.to_dict() for student in students]), 200
+    except Exception as e:
+        print(f"Error in view_saved_data2: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'message': f'Failed to fetch data: {str(e)}'}), 500
+
+@app.route('/update_analysis2/<roll_no>', methods=['PATCH'])
+def update_analysis2(roll_no):
+    try:
+        student = StudentAnalysis.query.filter_by(roll_no=roll_no).first()
+        if not student:
+            return jsonify({'message': 'Student not found!'}), 404
+
+        data = request.get_json()
+        if not data:
+            return jsonify({'message': 'No data provided!'}), 400
+
+        # Update fields if provided
+        if 'roll_no' in data:
+            new_roll_no = data['roll_no']
+            if new_roll_no != roll_no:
+                existing_student = StudentAnalysis.query.filter_by(roll_no=new_roll_no).first()
+                if existing_student:
+                    return jsonify({'message': f"Roll number {new_roll_no} already exists!"}), 409
+                student.roll_no = new_roll_no
+        
+        if 'name' in data:
+            student.name = data['name']
+        
+        if 'marks' in data:
+            try:
+                marks = float(data['marks'])
+                if not (0 <= marks <= 20):
+                    return jsonify({'message': f"Invalid marks: {marks}. Must be between 0 and 20."}), 400
+                student.marks = marks
+            except (ValueError, TypeError):
+                return jsonify({'message': f"Invalid marks format: {data['marks']}"}), 400
+        
+        if 'percentage' in data:
+            student.percentage = data['percentage']
+        
+        if 'category' in data:
+            student.category = data['category']
+        
+        if 'observation' in data:
+            student.observation = data['observation']
+
+        db.session.commit()
+        return jsonify({'message': 'Data updated successfully!'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Failed to update data: {str(e)}'}), 500
+
+@app.route('/delete_analysis2/<roll_no>', methods=['DELETE'])
+def delete_analysis2(roll_no):
+    try:
+        student = StudentAnalysis.query.filter_by(roll_no=roll_no).first()
+        if not student:
+            return jsonify({'message': 'Student not found!'}), 404
+
+        db.session.delete(student)
+        db.session.commit()
+        return jsonify({'message': 'Data deleted successfully!'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Failed to delete data: {str(e)}'}), 500
+
 
 @app.route('/direct_assesment')
 def direct_assesment():

@@ -435,154 +435,123 @@
         }
 
         function CalculateMarks() {
-            const rows = document.querySelectorAll("#student-marks-body tr");
-            let totals = { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, total: 0 };
-            let coTotals = {
-                CO4: { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, avg: 0, count: 0, perc: [] },
-                CO5: { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, avg: 0, count: 0, perc: [] },
-                CO6: { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, avg: 0, count: 0, perc: [] }
-            };
-            let count = 0;
+    const rows = document.querySelectorAll("#student-marks-body tr");
+    let totals = { q1a: 0, q1b: 0, q1c: 0, q1d: 0, q1e: 0, q1f: 0, q2a: 0, q2b: 0, q3a: 0, q3b: 0, total: 0 };
+    let coTotals = {
+        CO4: { sum: 0, count: 0, avg: 0, perc: 0 },
+        CO5: { sum: 0, count: 0, avg: 0, perc: 0 },
+        CO6: { sum: 0, count: 0, avg: 0, perc: 0 }
+    };
+    let count = 0;
 
-            rows.forEach(row => {
-                let q1Marks = [];
-                let q2Marks = [];
-                let q3Marks = [];
-                const marksInputs = row.querySelectorAll(".marks");
+    rows.forEach(row => {
+        let q1Marks = [];
+        let q2Marks = [];
+        let q3Marks = [];
+        const marksInputs = row.querySelectorAll(".marks");
 
-                marksInputs.forEach((input, index) => {
-                    const maxMark = parseInt(input.dataset.marks);
-                    const val = parseFloat(input.value) || 0;
-                    const qn = ['1a', '1b', '1c', '1d', '1e', '1f', '2a', '2b', '3a', '3b'][index];
+        marksInputs.forEach((input, index) => {
+            const maxMark = parseInt(input.dataset.marks);
+            const val = parseFloat(input.value) || 0;
+            const qn = ['1a', '1b', '1c', '1d', '1e', '1f', '2a', '2b', '3a', '3b'][index];
 
-                    if (!isNaN(val) && val >= 0 && val <= maxMark) {
-                        if (index < 6) q1Marks.push({ qn, val });
-                        else if (index < 8) q2Marks.push({ qn, val });
-                        else q3Marks.push({ qn, val });
-                    }
-                });
+            if (!isNaN(val) && val >= 0 && val <= maxMark) {
+                if (index < 6) q1Marks.push({ qn, val });
+                else if (index < 8) q2Marks.push({ qn, val });
+                else q3Marks.push({ qn, val });
+            }
+        });
 
-                q1Marks.sort((a, b) => b.val - a.val);
-                q1Marks = q1Marks.slice(0, 5);
+        // Sort and take best marks
+        q1Marks.sort((a, b) => b.val - a.val);
+        q1Marks = q1Marks.slice(0, 5);
 
-                q2Marks.sort((a, b) => b.val - a.val);
-                q2Marks = q2Marks.slice(0, 2);
+        q2Marks.sort((a, b) => b.val - a.val);
+        q2Marks = q2Marks.slice(0, 2);
 
-                q3Marks.sort((a, b) => b.val - a.val);
-                q3Marks = q3Marks.slice(0, 1);
+        q3Marks.sort((a, b) => b.val - a.val);
+        q3Marks = q3Marks.slice(0, 1);
 
-                let rowTotal = (q1Marks.reduce((a, b) => a + b.val, 0) || 0) +
-                    (q2Marks.reduce((a, b) => a + b.val, 0) || 0) +
-                    (q3Marks[0]?.val || 0);
-                rowTotal = Math.min(rowTotal, 20);
+        // Calculate row total
+        let rowTotal = (q1Marks.reduce((a, b) => a + b.val, 0) || 0) +
+                       (q2Marks.reduce((a, b) => a + b.val, 0) || 0) +
+                       (q3Marks[0]?.val || 0);
+        rowTotal = Math.min(rowTotal, 20);
 
-                row.querySelector(".total-marks").textContent = rowTotal.toFixed(2);
-                if (rowTotal > 0) {
-                    totals.q1a += q1Marks.find(m => m.qn === '1a')?.val || 0;
-                    totals.q1b += q1Marks.find(m => m.qn === '1b')?.val || 0;
-                    totals.q1c += q1Marks.find(m => m.qn === '1c')?.val || 0;
-                    totals.q1d += q1Marks.find(m => m.qn === '1d')?.val || 0;
-                    totals.q1e += q1Marks.find(m => m.qn === '1e')?.val || 0;
-                    totals.q1f += q1Marks.find(m => m.qn === '1f')?.val || 0;
-                    totals.q2a += q2Marks.find(m => m.qn === '2a')?.val || 0;
-                    totals.q2b += q2Marks.find(m => m.qn === '2b')?.val || 0;
-                    totals.q3a += q3Marks.find(m => m.qn === '3a')?.val || 0;
-                    totals.q3b += q3Marks.find(m => m.qn === '3b')?.val || 0;
-                    totals.total += rowTotal;
+        row.querySelector(".total-marks").textContent = rowTotal.toFixed(2);
+        if (rowTotal > 0) {
+            // Update totals for summary table
+            totals.q1a += q1Marks.find(m => m.qn === '1a')?.val || 0;
+            totals.q1b += q1Marks.find(m => m.qn === '1b')?.val || 0;
+            totals.q1c += q1Marks.find(m => m.qn === '1c')?.val || 0;
+            totals.q1d += q1Marks.find(m => m.qn === '1d')?.val || 0;
+            totals.q1e += q1Marks.find(m => m.qn === '1e')?.val || 0;
+            totals.q1f += q1Marks.find(m => m.qn === '1f')?.val || 0;
+            totals.q2a += q2Marks.find(m => m.qn === '2a')?.val || 0;
+            totals.q2b += q2Marks.find(m => m.qn === '2b')?.val || 0;
+            totals.q3a += q3Marks.find(m => m.qn === '3a')?.val || 0;
+            totals.q3b += q3Marks.find(m => m.qn === '3b')?.val || 0;
+            totals.total += rowTotal;
 
-                    const allBestMarks = [...q1Marks, ...q2Marks, ...q3Marks];
-                    marksInputs.forEach((input, index) => {
-                        const val = parseFloat(input.value) || 0;
-                        const qn = ['1a', '1b', '1c', '1d', '1e', '1f', '2a', '2b', '3a', '3b'][index];
-                        let co = null;
-                        if (qn === '1a' || qn === '1b') co = 'CO4';
-                        else if (qn === '1c' || qn === '1d' || qn === '1e' || qn === '1f' || qn === '2a' || qn === '2b') co = 'CO5';
-                        else if (qn === '3a' || qn === '3b') co = 'CO6';
-
-                        if (co) {
-                            const bestMark = allBestMarks.find(m => m.qn === qn)?.val || 0;
-                            if (bestMark > 0) {
-                                coTotals[co].avg += bestMark;
-                                coTotals[co].count++;
-                                const maxMark = parseInt(input.dataset.marks);
-                                const perc = (bestMark / maxMark) * 100;
-                                coTotals[co].perc.push(perc);
-                            }
-                        }
-                    });
-                    count++;
+            // Update CO totals with best marks based on dynamic mapping
+            const allBestMarks = [...q1Marks, ...q2Marks, ...q3Marks];
+            allBestMarks.forEach(mark => {
+                const co = coMapping[mark.qn] || null;
+                if (co && mark.val > 0) {
+                    coTotals[co].sum += mark.val;
+                    coTotals[co].count++;
                 }
             });
-
-            // Update summary table
-            document.getElementById('avg-q1a').textContent = (count > 0 ? (totals.q1a / count).toFixed(2) : 0);
-            document.getElementById('avg-q1b').textContent = (count > 0 ? (totals.q1b / count).toFixed(2) : 0);
-            document.getElementById('avg-q1c').textContent = (count > 0 ? (totals.q1c / count).toFixed(2) : 0);
-            document.getElementById('avg-q1d').textContent = (count > 0 ? (totals.q1d / count).toFixed(2) : 0);
-            document.getElementById('avg-q1e').textContent = (count > 0 ? (totals.q1e / count).toFixed(2) : 0);
-            document.getElementById('avg-q1f').textContent = (count > 0 ? (totals.q1f / count).toFixed(2) : 0);
-            document.getElementById('avg-q2a').textContent = (count > 0 ? (totals.q2a / count).toFixed(2) : 0);
-            document.getElementById('avg-q2b').textContent = (count > 0 ? (totals.q2b / count).toFixed(2) : 0);
-            document.getElementById('avg-q3a').textContent = (count > 0 ? (totals.q3a / count).toFixed(2) : 0);
-            document.getElementById('avg-q3b').textContent = (count > 0 ? (totals.q3b / count).toFixed(2) : 0);
-            document.getElementById('avg-total').textContent = (count > 0 ? (totals.total / count).toFixed(2) : 0);
-
-            document.getElementById('perc-q1a').textContent = (count > 0 ? ((totals.q1a / count) / 2 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q1b').textContent = (count > 0 ? ((totals.q1b / count) / 2 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q1c').textContent = (count > 0 ? ((totals.q1c / count) / 2 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q1d').textContent = (count > 0 ? ((totals.q1d / count) / 2 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q1e').textContent = (count > 0 ? ((totals.q1e / count) / 2 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q1f').textContent = (count > 0 ? ((totals.q1f / count) / 2 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q2a').textContent = (count > 0 ? ((totals.q2a / count) / 5 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q2b').textContent = (count > 0 ? ((totals.q2b / count) / 5 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q3a').textContent = (count > 0 ? ((totals.q3a / count) / 5 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-q3b').textContent = (count > 0 ? ((totals.q3b / count) / 5 * 100).toFixed(2) : 0.00);
-            document.getElementById('perc-total').textContent = (count > 0 ? (totals.total / (count * 20) * 100).toFixed(2) : 0.00);
-
-            // Update CO table with exact summary table averages
-            ['CO4', 'CO5', 'CO6'].forEach(co => {
-                const avg = coTotals[co].count > 0 ? (coTotals[co].avg / coTotals[co].count).toFixed(2) : 0;
-                const percAvg = coTotals[co].perc.length > 0 ? (coTotals[co].perc.reduce((a, b) => a + b, 0) / coTotals[co].perc.length).toFixed(2) : 0.00;
-
-                // Reset all CO totals
-                Object.keys(coTotals[co]).forEach(key => {
-                    if (key !== 'avg' && key !== 'count' && key !== 'perc') coTotals[co][key] = 0;
-                });
-
-                // Assign averages from summary table based on mappings
-                if (co === 'CO4') {
-                    coTotals[co].q1a = totals.q1a;
-                    coTotals[co].q1b = totals.q1b;
-                    coTotals[co].avg = (totals.q1a + totals.q1b) / (count * 2) * 100; // Average of Q1a and Q1b
-                } else if (co === 'CO5') {
-                    coTotals[co].q1c = totals.q1c;
-                    coTotals[co].q1d = totals.q1d;
-                    coTotals[co].q1e = totals.q1e;
-                    coTotals[co].q1f = totals.q1f;
-                    coTotals[co].q2a = totals.q2a;
-                    coTotals[co].q2b = totals.q2b;
-                    coTotals[co].avg = (totals.q1c + totals.q1d + totals.q1e + totals.q1f + totals.q2a + totals.q2b) / (count * 14) * 100; // Average of 6 questions (2+2+2+2+5+5)
-                } else if (co === 'CO6') {
-                    coTotals[co].q3a = totals.q3a;
-                    coTotals[co].q3b = totals.q3b;
-                    coTotals[co].avg = (totals.q3a + totals.q3b) / (count * 10) * 100; // Average of Q3a and Q3b (5+5)
-                }
-
-                // Update CO table display with summary averages
-                document.getElementById(`${co.toLowerCase()}-q1a`).textContent = (coTotals[co].q1a / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1b`).textContent = (coTotals[co].q1b / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1c`).textContent = (coTotals[co].q1c / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1d`).textContent = (coTotals[co].q1d / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1e`).textContent = (coTotals[co].q1e / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1f`).textContent = (coTotals[co].q1f / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q2a`).textContent = (coTotals[co].q2a / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q2b`).textContent = (coTotals[co].q2b / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q3a`).textContent = (coTotals[co].q3a / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q3b`).textContent = (coTotals[co].q3b / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-avg`).textContent = avg;
-                document.getElementById(`${co.toLowerCase()}-perc`).textContent = percAvg;
-            });
+            count++;
         }
+    });
+
+    // Update summary table
+    document.getElementById('avg-q1a').textContent = (count > 0 ? (totals.q1a / count).toFixed(2) : 0);
+    document.getElementById('avg-q1b').textContent = (count > 0 ? (totals.q1b / count).toFixed(2) : 0);
+    document.getElementById('avg-q1c').textContent = (count > 0 ? (totals.q1c / count).toFixed(2) : 0);
+    document.getElementById('avg-q1d').textContent = (count > 0 ? (totals.q1d / count).toFixed(2) : 0);
+    document.getElementById('avg-q1e').textContent = (count > 0 ? (totals.q1e / count).toFixed(2) : 0);
+    document.getElementById('avg-q1f').textContent = (count > 0 ? (totals.q1f / count).toFixed(2) : 0);
+    document.getElementById('avg-q2a').textContent = (count > 0 ? (totals.q2a / count).toFixed(2) : 0);
+    document.getElementById('avg-q2b').textContent = (count > 0 ? (totals.q2b / count).toFixed(2) : 0);
+    document.getElementById('avg-q3a').textContent = (count > 0 ? (totals.q3a / count).toFixed(2) : 0);
+    document.getElementById('avg-q3b').textContent = (count > 0 ? (totals.q3b / count).toFixed(2) : 0);
+    document.getElementById('avg-total').textContent = (count > 0 ? (totals.total / count).toFixed(2) : 0);
+
+    document.getElementById('perc-q1a').textContent = (count > 0 ? ((totals.q1a / count) / 2 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q1b').textContent = (count > 0 ? ((totals.q1b / count) / 2 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q1c').textContent = (count > 0 ? ((totals.q1c / count) / 2 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q1d').textContent = (count > 0 ? ((totals.q1d / count) / 2 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q1e').textContent = (count > 0 ? ((totals.q1e / count) / 2 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q1f').textContent = (count > 0 ? ((totals.q1f / count) / 2 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q2a').textContent = (count > 0 ? ((totals.q2a / count) / 5 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q2b').textContent = (count > 0 ? ((totals.q2b / count) / 5 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q3a').textContent = (count > 0 ? ((totals.q3a / count) / 5 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-q3b').textContent = (count > 0 ? ((totals.q3b / count) / 5 * 100).toFixed(2) : 0.00);
+    document.getElementById('perc-total').textContent = (count > 0 ? (totals.total / (count * 20) * 100).toFixed(2) : 0.00);
+
+    // Update CO table based on dynamic mappings
+    ['CO4', 'CO5', 'CO6'].forEach(co => {
+        coTotals[co].avg = (coTotals[co].count > 0 ? coTotals[co].sum / coTotals[co].count : 0).toFixed(2);
+        // Calculate percentage based on max mark (2 for CO4, 5 for CO5/CO6)
+        coTotals[co].perc = (coTotals[co].count > 0 ? (coTotals[co].sum / coTotals[co].count) / (co === 'CO4' ? 2 : 5) * 100 : 0).toFixed(2);
+
+        // Update individual question averages for display based on coMapping
+        document.getElementById(`${co.toLowerCase()}-q1a`).textContent = (coMapping['1a'] === co && count > 0 ? (totals.q1a / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q1b`).textContent = (coMapping['1b'] === co && count > 0 ? (totals.q1b / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q1c`).textContent = (coMapping['1c'] === co && count > 0 ? (totals.q1c / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q1d`).textContent = (coMapping['1d'] === co && count > 0 ? (totals.q1d / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q1e`).textContent = (coMapping['1e'] === co && count > 0 ? (totals.q1e / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q1f`).textContent = (coMapping['1f'] === co && count > 0 ? (totals.q1f / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q2a`).textContent = (coMapping['2a'] === co && count > 0 ? (totals.q2a / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q2b`).textContent = (coMapping['2b'] === co && count > 0 ? (totals.q2b / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q3a`).textContent = (coMapping['3a'] === co && count > 0 ? (totals.q3a / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-q3b`).textContent = (coMapping['3b'] === co && count > 0 ? (totals.q3b / count).toFixed(2) : 0);
+        document.getElementById(`${co.toLowerCase()}-avg`).textContent = coTotals[co].avg;
+        document.getElementById(`${co.toLowerCase()}-perc`).textContent = coTotals[co].perc;
+    });
+}
 
         function addRow() {
             const tbody = document.getElementById("student-marks-body");
