@@ -227,6 +227,26 @@ class COData2(db.Model):
     avg = db.Column(db.Float, nullable=False, default=0)
     perc = db.Column(db.Float, nullable=False, default=0)
 
+class AvgUnitCO(db.Model):
+    __tablename__ = 'avg_unit_co'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    co = db.Column(db.String(10), nullable=False, unique=True)  # e.g., 'CO1', 'CO2', ..., 'CO6'
+    q1a = db.Column(db.Float, default=0.0)  # 2-mark question averages
+    q1b = db.Column(db.Float, default=0.0)
+    q1c = db.Column(db.Float, default=0.0)
+    q1d = db.Column(db.Float, default=0.0)
+    q1e = db.Column(db.Float, default=0.0)
+    q1f = db.Column(db.Float, default=0.0)
+    q2a = db.Column(db.Float, default=0.0)  # 5-mark question averages
+    q2b = db.Column(db.Float, default=0.0)
+    q3a = db.Column(db.Float, default=0.0)
+    q3b = db.Column(db.Float, default=0.0)
+    perc = db.Column(db.Float, default=0.0)  # Total percentage
+
+    def __repr__(self):
+        return f"<AvgUnitCO(co='{self.co}', perc={self.perc})>"
+
 class CourseExitForm(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     roll_no = db.Column(db.String(20), unique=True, nullable=False)
@@ -1069,16 +1089,16 @@ def save_unit2():
             return jsonify({'error': 'Invalid data format'}), 400
 
         # Clear existing data (optional, depending on your requirements)
-        db.session.query(StudentMarks).delete()
-        db.session.query(SummaryData).delete()
-        db.session.query(COData).delete()
+        db.session.query(StudentMarks2).delete()
+        db.session.query(SummaryData2).delete()
+        db.session.query(COData2).delete()
 
         # Save student marks
         for student in data['students']:
             if len(student) < 12:
                 continue  # Skip invalid rows
             total = sum(float(mark) for mark in student[2:12] if mark)  # Calculate total
-            student_marks = StudentMarks(
+            student_marks = StudentMarks2(
                 roll_no=student[0],
                 name=student[1],
                 q1a=float(student[2]) if student[2] else 0,
@@ -1097,7 +1117,7 @@ def save_unit2():
 
         # Save summary data
         summary = data['summary']
-        summary_data = SummaryData(
+        summary_data = SummaryData2(
             q1a_avg=float(summary['q1a_avg']) if summary['q1a_avg'] else 0,
             q1b_avg=float(summary['q1b_avg']) if summary['q1b_avg'] else 0,
             q1c_avg=float(summary['q1c_avg']) if summary['q1c_avg'] else 0,
@@ -1125,7 +1145,7 @@ def save_unit2():
 
         # Save CO data
         for co in data['co']:
-            co_data = COData(
+            co_data = COData2(
                 co=co['co'],
                 q1a=float(co['q1a']) if co['q1a'] else 0,
                 q1b=float(co['q1b']) if co['q1b'] else 0,
@@ -1153,9 +1173,9 @@ def save_unit2():
 @app.route('/load_unit2', methods=['GET'])
 def load_unit2():
     try:
-        students = StudentMarks.query.all()
-        summary = SummaryData.query.first() or SummaryData()
-        co_data = COData.query.all()
+        students = StudentMarks2.query.all()
+        summary = SummaryData2.query.first() or SummaryData2()
+        co_data = COData2.query.all()
 
         student_data = [
             [s.roll_no, s.name, s.q1a, s.q1b, s.q1c, s.q1d, s.q1e, s.q1f, s.q2a, s.q2b, s.q3a, s.q3b]
@@ -1307,6 +1327,50 @@ def delete_analysis2(roll_no):
         db.session.rollback()
         return jsonify({'message': f'Failed to delete data: {str(e)}'}), 500
 
+@app.route('/avg_ut_co')
+def avg_ut_co():
+    return render_template('avg_ut_co.html')
+
+@app.route('/save_avg_unit_co', methods=['POST'])
+def save_avg_unit_co():
+    data = request.get_json()
+    if not data or not isinstance(data, list):
+        return jsonify({'error': 'Invalid data format: Expected a list'}), 400
+
+    # Validate CO values
+    valid_cos = {f'CO{i}' for i in range(1, 7)}
+    for item in data:
+        if 'co' not in item or item['co'] not in valid_cos:
+            return jsonify({'error': f"Invalid CO value: {item.get('co', 'missing')}"}), 400
+
+    session = db.session
+    try:
+        # Clear existing data to avoid duplicates
+        session.query(AvgUnitCO).delete()
+        # Insert new data
+        for item in data:
+            co_entry = AvgUnitCO(
+                co=item['co'],
+                q1a=float(item.get('q1a', 0.0)),
+                q1b=float(item.get('q1b', 0.0)),
+                q1c=float(item.get('q1c', 0.0)),
+                q1d=float(item.get('q1d', 0.0)),
+                q1e=float(item.get('q1e', 0.0)),
+                q1f=float(item.get('q1f', 0.0)),
+                q2a=float(item.get('q2a', 0.0)),
+                q2b=float(item.get('q2b', 0.0)),
+                q3a=float(item.get('q3a', 0.0)),
+                q3b=float(item.get('q3b', 0.0)),
+                perc=float(item.get('perc', 0.0))
+            )
+            session.add(co_entry)
+        session.commit()
+        return jsonify({'message': 'Data saved successfully'}), 200
+    except Exception as e:
+        session.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
 @app.route('/direct_assesment')
 def direct_assesment():

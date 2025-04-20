@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Average UT CO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            color: #222;
+            margin-bottom: 20px;
+        }
+
+        #avg-co-table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: normal;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        td {
+            font-weight: bold;
+        }
+
+        .button-container {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-left: 10px;
+            font-size: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #error-message {
+            margin: 10px auto;
+            color: #d8000c;
+            background-color: #ffd2d2;
+            border: 1px solid #d8000c;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 600px;
+            display: none;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+            }
+
+            th {
+                background-color: #0056b3;
+            }
+
+            th,
+            td {
+                padding: 8px;
+                font-size: 13px;
+            }
+
+            tr {
+                margin-bottom: 10px;
+            }
+
+            .button-container {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Average UT CO</h2>
+    <div id="error-message"></div>
+    <table id="avg-co-table">
+        <tr>
+            <th></th>
+            <th colspan="6">2</th>
+            <th colspan="4">5</th>
+            <th>Total %</th>
+        </tr>
+        <tr>
+            <th>CO</th>
+            <th>Q1a</th>
+            <th>Q1b</th>
+            <th>Q1c</th>
+            <th>Q1d</th>
+            <th>Q1e</th>
+            <th>Q1f</th>
+            <th>Q2a</th>
+            <th>Q2b</th>
+            <th>Q3a</th>
+            <th>Q3b</th>
+            <th>Total %</th>
+        </tr>
+        <tr>
+            <td>CO1</td>
+            <td id="co1-q1a">0.00</td>
+            <td id="co1-q1b">0.00</td>
+            <td id="co1-q1c">0.00</td>
+            <td id="co1-q1d">0.00</td>
+            <td id="co1-q1e">0.00</td>
+            <td id="co1-q1f">0.00</td>
+            <td id="co1-q2a">0.00</td>
+            <td id="co1-q2b">0.00</td>
+            <td id="co1-q3a">0.00</td>
+            <td id="co1-q3b">0.00</td>
+            <td id="co1-perc">0.00</td>
+        </tr>
+        <tr>
+            <td>CO2</td>
+            <td id="co2-q1a">0.00</td>
+            <td id="co2-q1b">0.00</td>
+            <td id="co2-q1c">0.00</td>
+            <td id="co2-q1d">0.00</td>
+            <td id="co2-q1e">0.00</td>
+            <td id="co2-q1f">0.00</td>
+            <td id="co2-q2a">0.00</td>
+            <td id="co2-q2b">0.00</td>
+            <td id="co2-q3a">0.00</td>
+            <td id="co2-q3b">0.00</td>
+            <td id="co2-perc">0.00</td>
+        </tr>
+        <tr>
+            <td>CO3</td>
+            <td id="co3-q1a">0.00</td>
+            <td id="co3-q1b">0.00</td>
+            <td id="co3-q1c">0.00</td>
+            <td id="co3-q1d">0.00</td>
+            <td id="co3-q1e">0.00</td>
+            <td id="co3-q1f">0.00</td>
+            <td id="co3-q2a">0.00</td>
+            <td id="co3-q2b">0.00</td>
+            <td id="co3-q3a">0.00</td>
+            <td id="co3-q3b">0.00</td>
+            <td id="co3-perc">0.00</td>
+        </tr>
+        <tr>
+            <td>CO4</td>
+            <td id="co4-q1a">0.00</td>
+            <td id="co4-q1b">0.00</td>
+            <td id="co4-q1c">0.00</td>
+            <td id="co4-q1d">0.00</td>
+            <td id="co4-q1e">0.00</td>
+            <td id="co4-q1f">0.00</td>
+            <td id="co4-q2a">0.00</td>
+            <td id="co4-q2b">0.00</td>
+            <td id="co4-q3a">0.00</td>
+            <td id="co4-q3b">0.00</td>
+            <td id="co4-perc">0.00</td>
+        </tr>
+        <tr>
+            <td>CO5</td>
+            <td id="co5-q1a">0.00</td>
+            <td id="co5-q1b">0.00</td>
+            <td id="co5-q1c">0.00</td>
+            <td id="co5-q1d">0.00</td>
+            <td id="co5-q1e">0.00</td>
+            <td id="co5-q1f">0.00</td>
+            <td id="co5-q2a">0.00</td>
+            <td id="co5-q2b">0.00</td>
+            <td id="co5-q3a">0.00</td>
+            <td id="co5-q3b">0.00</td>
+            <td id="co5-perc">0.00</td>
+        </tr>
+        <tr>
+            <td>CO6</td>
+            <td id="co6-q1a">0.00</td>
+            <td id="co6-q1b">0.00</td>
+            <td id="co6-q1c">0.00</td>
+            <td id="co6-q1d">0.00</td>
+            <td id="co6-q1e">0.00</td>
+            <td id="co6-q1f">0.00</td>
+            <td id="co6-q2a">0.00</td>
+            <td id="co6-q2b">0.00</td>
+            <td id="co6-q3a">0.00</td>
+            <td id="co6-q3b">0.00</td>
+            <td id="co6-perc">0.00</td>
+        </tr>
+    </table>
+
+    <div class="button-container">
+        <button onclick="saveData()">Save</button>
+        <button onclick="direct_assesment()">Next</button>
+    </div>
+
+    <script>
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function loadAvgUnitCO() {
+            Promise.all([
+                fetch('http://127.0.0.1:5000/load_unit1').then(res => {
+                    if (!res.ok) throw new Error(`Unit 1 fetch failed: ${res.status}`);
+                    return res.json();
+                }),
+                fetch('http://127.0.0.1:5000/load_unit2').then(res => {
+                    if (!res.ok) throw new Error(`Unit 2 fetch failed: ${res.status}`);
+                    return res.json();
+                })
+            ])
+                .then(([unit1Data, unit2Data]) => {
+                    console.log('Unit 1 Data:', unit1Data);
+                    console.log('Unit 2 Data:', unit2Data);
+
+                    if (unit1Data.error) {
+                        showError(`Unit 1 Error: ${unit1Data.error}`);
+                        return;
+                    }
+                    if (unit2Data.error) {
+                        showError(`Unit 2 Error: ${unit2Data.error}`);
+                        return;
+                    }
+
+                    // Verify CO data exists
+                    if (!unit1Data.co || !Array.isArray(unit1Data.co)) {
+                        showError('Unit 1: Invalid or missing CO data');
+                        return;
+                    }
+                    if (!unit2Data.co || !Array.isArray(unit2Data.co)) {
+                        showError('Unit 2: Invalid or missing CO data');
+                        return;
+                    }
+
+                    // Combine CO data with normalization
+                    const coData = [
+                        ...unit1Data.co.map(co => ({
+                            co: co.co ? co.co.toUpperCase() : '',
+                            q1a: parseFloat(co.q1a) || 0,
+                            q1b: parseFloat(co.q1b) || 0,
+                            q1c: parseFloat(co.q1c) || 0,
+                            q1d: parseFloat(co.q1d) || 0,
+                            q1e: parseFloat(co.q1e) || 0,
+                            q1f: parseFloat(co.q1f) || 0,
+                            q2a: parseFloat(co.q2a) || 0,
+                            q2b: parseFloat(co.q2b) || 0,
+                            q3a: parseFloat(co.q3a) || 0,
+                            q3b: parseFloat(co.q3b) || 0,
+                            perc: parseFloat(co.perc) || 0
+                        })),
+                        ...unit2Data.co.map(co => ({
+                            co: co.co ? co.co.toUpperCase() : '',
+                            q1a: parseFloat(co.q1a) || 0,
+                            q1b: parseFloat(co.q1b) || 0,
+                            q1c: parseFloat(co.q1c) || 0,
+                            q1d: parseFloat(co.q1d) || 0,
+                            q1e: parseFloat(co.q1e) || 0,
+                            q1f: parseFloat(co.q1f) || 0,
+                            q2a: parseFloat(co.q2a) || 0,
+                            q2b: parseFloat(co.q2b) || 0,
+                            q3a: parseFloat(co.q3a) || 0,
+                            q3b: parseFloat(co.q3b) || 0,
+                            perc: parseFloat(co.perc) || 0
+                        }))
+                    ];
+
+                    console.log('Combined CO Data:', coData);
+
+                    if (coData.length === 0) {
+                        showError('No CO data available to display');
+                        return;
+                    }
+
+                    // Populate table
+                    coData.forEach((co, index) => {
+                        try {
+                            console.log(`Processing CO ${index + 1}:`, co);
+                            if (!co.co) {
+                                console.warn(`Skipping CO entry with missing co field at index ${index}`);
+                                return;
+                            }
+                            const coId = co.co.toLowerCase().replace('co', 'co'); // Ensure correct format (e.g., co1)
+                            const fields = ['q1a', 'q1b', 'q1c', 'q1d', 'q1e', 'q1f', 'q2a', 'q2b', 'q3a', 'q3b', 'perc'];
+                            fields.forEach(field => {
+                                const element = document.getElementById(`${coId}-${field}`);
+                                if (element) {
+                                    element.textContent = co[field].toFixed(2);
+                                } else {
+                                    console.warn(`Element not found: ${coId}-${field}`);
+                                }
+                            });
+                        } catch (err) {
+                            console.error(`Error processing CO ${co.co || index}:`, err);
+                        }
+                    });
+
+                    alert('CO data loaded successfully!');
+                })
+                .catch(err => {
+                    console.error('Fetch Error:', err);
+                    showError(`Error loading CO data: ${err.message}`);
+                });
+        }
+
+        function saveData() {
+            const table = document.getElementById('avg-co-table');
+            const rows = table.querySelectorAll('tr');
+            const data = [];
+
+            // Skip header rows and collect data
+            for (let i = 2; i < rows.length; i++) {
+                const cells = rows[i].querySelectorAll('td');
+                const rowData = {
+                    co: cells[0].textContent,
+                    q1a: cells[1].textContent,
+                    q1b: cells[2].textContent,
+                    q1c: cells[3].textContent,
+                    q1d: cells[4].textContent,
+                    q1e: cells[5].textContent,
+                    q1f: cells[6].textContent,
+                    q2a: cells[7].textContent,
+                    q2b: cells[8].textContent,
+                    q3a: cells[9].textContent,
+                    q3b: cells[10].textContent,
+                    perc: cells[11].textContent
+                };
+                data.push(rowData);
+            }
+
+            console.log('Saving Data:', data);
+
+            // Send data to backend
+            fetch('http://127.0.0.1:5000/save_avg_unit_co', {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Save Success:', data);
+                    alert('Data saved successfully!');
+                })
+                .catch(error => {
+                    console.error('Save Error:', error);
+                    showError('Error saving data: ' + error.message);
+                });
+        }
+
+        function direct_assesment() {
+            window.location.href = "direct_assesment"; // Replace with actual next page URL
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadAvgUnitCO);
+    </script>
+</body>
+
+</html>
