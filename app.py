@@ -158,6 +158,18 @@ class COData(db.Model):
     avg = db.Column(db.Float, nullable=False, default=0)
     perc = db.Column(db.Float, nullable=False, default=0)
 
+#for ut1 analysis
+class StudentPerformance(db.Model):
+    __tablename__ = 'student_performance'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    roll_no = db.Column(db.String(10), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    test_marks = db.Column(db.Float, nullable=False)
+    test_percentage = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(20), nullable=False)  # Bright, Weak, Average
+    observation = db.Column(db.String(255), nullable=False)
+
+
 ##unit test2
 class Student2(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -226,6 +238,29 @@ class COData2(db.Model):
     q3b = db.Column(db.Float, nullable=False, default=0)
     avg = db.Column(db.Float, nullable=False, default=0)
     perc = db.Column(db.Float, nullable=False, default=0)
+
+#student analysis 2
+class StudentAnalysis(db.Model):
+    __tablename__ = 'students_analysis2'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    roll_no = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    marks = db.Column(db.Float, nullable=False)
+    percentage = db.Column(db.String(10), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    observation = db.Column(db.String(200), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'roll_no': self.roll_no,
+            'name': self.name,
+            'marks': self.marks,
+            'percentage': self.percentage,
+            'category': self.category,
+            'observation': self.observation
+        }
 
 class AvgUnitCO(db.Model):
     __tablename__ = 'avg_unit_co'
@@ -354,39 +389,6 @@ class AssessmentSummary(db.Model):
             "timestamp": self.timestamp.isoformat()
         }
 
-class StudentPerformance(db.Model):
-    __tablename__ = 'student_performance'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    roll_no = db.Column(db.String(10), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    test_marks = db.Column(db.Float, nullable=False)
-    test_percentage = db.Column(db.Float, nullable=False)
-    category = db.Column(db.String(20), nullable=False)  # Bright, Weak, Average
-    observation = db.Column(db.String(255), nullable=False)
-
-#student analysis 2
-class StudentAnalysis(db.Model):
-    __tablename__ = 'students_analysis2'
-    
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    roll_no = db.Column(db.String(50), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    marks = db.Column(db.Float, nullable=False)
-    percentage = db.Column(db.String(10), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    observation = db.Column(db.String(200), nullable=False)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'roll_no': self.roll_no,
-            'name': self.name,
-            'marks': self.marks,
-            'percentage': self.percentage,
-            'category': self.category,
-            'observation': self.observation
-        }
-
     
 # Define Models
 class DirectAttainment(db.Model):
@@ -410,6 +412,8 @@ class FinalAttainment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     course = db.Column(db.String(20), nullable=False, unique=True)
     final_attainment = db.Column(db.Float, nullable=False)    
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -1336,41 +1340,27 @@ def save_avg_unit_co():
     data = request.get_json()
     if not data or not isinstance(data, list):
         return jsonify({'error': 'Invalid data format: Expected a list'}), 400
-
-    # Validate CO values
     valid_cos = {f'CO{i}' for i in range(1, 7)}
     for item in data:
         if 'co' not in item or item['co'] not in valid_cos:
             return jsonify({'error': f"Invalid CO value: {item.get('co', 'missing')}"}), 400
-
-    session = db.session
     try:
-        # Clear existing data to avoid duplicates
-        session.query(AvgUnitCO).delete()
-        # Insert new data
+        AvgUnitCO.query.delete()
         for item in data:
             co_entry = AvgUnitCO(
                 co=item['co'],
-                q1a=float(item.get('q1a', 0.0)),
-                q1b=float(item.get('q1b', 0.0)),
-                q1c=float(item.get('q1c', 0.0)),
-                q1d=float(item.get('q1d', 0.0)),
-                q1e=float(item.get('q1e', 0.0)),
-                q1f=float(item.get('q1f', 0.0)),
-                q2a=float(item.get('q2a', 0.0)),
-                q2b=float(item.get('q2b', 0.0)),
-                q3a=float(item.get('q3a', 0.0)),
-                q3b=float(item.get('q3b', 0.0)),
+                q1a=float(item.get('q1a', 0.0)), q1b=float(item.get('q1b', 0.0)), q1c=float(item.get('q1c', 0.0)),
+                q1d=float(item.get('q1d', 0.0)), q1e=float(item.get('q1e', 0.0)), q1f=float(item.get('q1f', 0.0)),
+                q2a=float(item.get('q2a', 0.0)), q2b=float(item.get('q2b', 0.0)),
+                q3a=float(item.get('q3a', 0.0)), q3b=float(item.get('q3b', 0.0)),
                 perc=float(item.get('perc', 0.0))
             )
-            session.add(co_entry)
-        session.commit()
+            db.session.add(co_entry)
+        db.session.commit()
         return jsonify({'message': 'Data saved successfully'}), 200
     except Exception as e:
-        session.rollback()
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
-    finally:
-        session.close()
 
 @app.route('/direct_assesment')
 def direct_assesment():
@@ -1379,62 +1369,45 @@ def direct_assesment():
 @app.route('/save_marks', methods=['POST'])
 def save_marks():
     try:
-        data = request.get_json()  # Get JSON data from frontend
+        data = request.get_json()
         if not data or not isinstance(data, list):
             return jsonify({"message": "Invalid data format. Expected a list of records."}), 400
-
         for entry in data:
-            # Ensure required fields exist
             if not all(k in entry for k in ["roll_no", "student_name", "total_ext", "total_int", "total_marks", "grade"]):
                 return jsonify({"message": "Missing required fields in request data"}), 400
-
-            # Validate numerical values
             try:
                 total_ext = int(entry['total_ext'])
                 total_int = int(entry['total_int'])
                 total_marks = int(entry['total_marks'])
             except ValueError:
                 return jsonify({"message": "Invalid number format in total_ext, total_int, or total_marks"}), 400
-
-            # Ensure total_ext and total_int are within valid ranges
             if not (0 <= total_ext <= 80) or not (0 <= total_int <= 20):
                 return jsonify({"message": f"Invalid marks for Roll No {entry['roll_no']}. Check Ext (0-80) and Int (0-20)."}), 400
-
-            # Check if record already exists
             existing = DirectAssessment.query.filter_by(roll_no=entry['roll_no']).first()
             if existing:
-                # Update existing record
                 existing.student_name = entry['student_name']
                 existing.total_ext = total_ext
                 existing.total_int = total_int
                 existing.total_marks = total_marks
                 existing.grade = entry['grade']
             else:
-                # Create new record
                 new_assessment = DirectAssessment(
-                    roll_no=entry['roll_no'],
-                    student_name=entry['student_name'],
-                    total_ext=total_ext,
-                    total_int=total_int,
-                    total_marks=total_marks,
-                    grade=entry['grade']
+                    roll_no=entry['roll_no'], student_name=entry['student_name'], total_ext=total_ext,
+                    total_int=total_int, total_marks=total_marks, grade=entry['grade']
                 )
                 db.session.add(new_assessment)
-
         db.session.commit()
         return jsonify({"message": "Data saved successfully"}), 200
-
     except Exception as e:
-        db.session.rollback()  # Rollback any failed transactions
+        db.session.rollback()
         return jsonify({"message": f"Error saving data: {str(e)}"}), 500
-    
+
 @app.route('/save_summary', methods=['POST'])
 def save_summary():
     try:
         data = request.get_json()
         if not data or not all(k in data for k in ["average_marks", "max_ext_marks", "max_int_marks", "overall_percentage", "most_common_grade"]):
             return jsonify({"message": "Invalid summary data format"}), 400
-
         try:
             average_marks = float(data['average_marks'])
             max_ext_marks = int(data['max_ext_marks'])
@@ -1442,12 +1415,9 @@ def save_summary():
             overall_percentage = float(data['overall_percentage'])
         except ValueError:
             return jsonify({"message": "Invalid number format in summary data"}), 400
-
         if not (0 <= max_ext_marks <= 80) or not (0 <= max_int_marks <= 20):
             return jsonify({"message": "Invalid max marks range. Ext (0-80), Int (0-20)."}), 400
-
-        # Check if a summary already exists (optional: update or create new)
-        existing_summary = AssessmentSummary.query.first()  # You can modify this logic (e.g., by timestamp)
+        existing_summary = AssessmentSummary.query.first()
         if existing_summary:
             existing_summary.average_marks = average_marks
             existing_summary.max_ext_marks = max_ext_marks
@@ -1456,25 +1426,20 @@ def save_summary():
             existing_summary.most_common_grade = data['most_common_grade']
         else:
             new_summary = AssessmentSummary(
-                average_marks=average_marks,
-                max_ext_marks=max_ext_marks,
-                max_int_marks=max_int_marks,
-                overall_percentage=overall_percentage,
-                most_common_grade=data['most_common_grade']
+                average_marks=average_marks, max_ext_marks=max_ext_marks, max_int_marks=max_int_marks,
+                overall_percentage=overall_percentage, most_common_grade=data['most_common_grade']
             )
             db.session.add(new_summary)
-
         db.session.commit()
         return jsonify({"message": "Summary saved successfully"}), 200
-
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": f"Error saving summary: {str(e)}"}), 500    
+        return jsonify({"message": f"Error saving summary: {str(e)}"}), 500
 
 @app.route('/get_all_marks', methods=['GET'])
 def get_all_marks():
     try:
-        assessments = DirectAssessment.query.all()  # Fetch all records
+        assessments = DirectAssessment.query.all()
         return jsonify([assessment.to_dict() for assessment in assessments]), 200
     except Exception as e:
         return jsonify({"message": f"Error fetching data: {str(e)}"}), 500
@@ -1484,50 +1449,34 @@ def delete_marks():
     try:
         data = request.get_json()
         roll_nos = data.get('roll_nos', [])
-
         if not roll_nos:
             return jsonify({"message": "No roll numbers provided"}), 400
-
-        # Delete records matching the roll numbers
         deleted_count = DirectAssessment.query.filter(DirectAssessment.roll_no.in_(roll_nos)).delete(synchronize_session=False)
         db.session.commit()
-
         if deleted_count > 0:
             return jsonify({"message": "Data deleted successfully"}), 200
         else:
             return jsonify({"message": "No matching records found"}), 404
-
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": f"Error deleting data: {str(e)}"}), 500
-
+    
 # New route to serve summary data for Co_Attainment_Cal.html
 @app.route('/get_direct_summary', methods=['GET'])
 def get_direct_summary():
     try:
         latest_summary = AssessmentSummary.query.order_by(AssessmentSummary.timestamp.desc()).first()
         if not latest_summary:
-            return jsonify({
-                'error': 'No summary data available',
-                'perc1': '0',
-                'perc2': '0'
-            }), 404
-
-        # Match HTML's updateSummary() logic
+            return jsonify({'error': 'No summary data available', 'perc1': '0', 'perc2': '0'}), 404
         assessments = DirectAssessment.query.all()
         if not assessments:
             return jsonify({'perc1': '0', 'perc2': '0'}), 200
-
         ext_sum = sum(a.total_ext for a in assessments)
         int_sum = sum(a.total_int for a in assessments)
         valid_students = len(assessments)
         perc1 = (ext_sum / (80 * valid_students)) * 100
         perc2 = (int_sum / (20 * valid_students)) * 100
-
-        return jsonify({
-            'perc1': f'{perc1:.2f}',
-            'perc2': f'{perc2:.2f}'
-        }), 200
+        return jsonify({'perc1': f'{perc1:.2f}', 'perc2': f'{perc2:.2f}'}), 200
     except Exception as e:
         return jsonify({"message": f"Error fetching summary data: {str(e)}"}), 500
 
@@ -1657,33 +1606,23 @@ def delete_data(roll_no):
 @app.route('/get_indirect_summary', methods=['GET'])
 def get_indirect_summary():
     try:
-        # Fetch the latest CourseAnalysis
         latest_analysis = CourseAnalysis.query.order_by(CourseAnalysis.analysis_date.desc()).first()
         if not latest_analysis:
             return jsonify({
                 'error': 'No analysis data available',
-                'wtAvgCO1': 0.0,
-                'wtAvgCO2': 0.0,
-                'wtAvgCO3': 0.0,
-                'wtAvgCO4': 0.0,
-                'wtAvgCO5': 0.0,
-                'wtAvgCO6': 0.0
+                'wt_avg_co1': 0.0, 'wt_avg_co2': 0.0, 'wt_avg_co3': 0.0,
+                'wt_avg_co4': 0.0, 'wt_avg_co5': 0.0, 'wt_avg_co6': 0.0
             }), 404
-
-        # Return Wt.Avg Max Percentages
         return jsonify({
-            'wtAvgCO1': float(latest_analysis.wt_avg_co1),
-            'wtAvgCO2': float(latest_analysis.wt_avg_co2),
-            'wtAvgCO3': float(latest_analysis.wt_avg_co3),
-            'wtAvgCO4': float(latest_analysis.wt_avg_co4),
-            'wtAvgCO5': float(latest_analysis.wt_avg_co5),
-            'wtAvgCO6': float(latest_analysis.wt_avg_co6)
+            'wt_avg_co1': float(latest_analysis.wt_avg_co1),
+            'wt_avg_co2': float(latest_analysis.wt_avg_co2),
+            'wt_avg_co3': float(latest_analysis.wt_avg_co3),
+            'wt_avg_co4': float(latest_analysis.wt_avg_co4),
+            'wt_avg_co5': float(latest_analysis.wt_avg_co5),
+            'wt_avg_co6': float(latest_analysis.wt_avg_co6)
         }), 200
-
     except Exception as e:
         return jsonify({"message": f"Error fetching summary data: {str(e)}"}), 500
-
-
 
 # Routes
 @app.route('/Co_Attainment_Cal')
@@ -1693,56 +1632,59 @@ def co_attainment_cal():
 @app.route('/get_summary', methods=['GET'])
 def get_summary():
     try:
-        direct_data = DirectAttainment.query.all()
-        if not direct_data:
-            courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6']
-            for course in courses:
-                new_direct = DirectAttainment(
-                    course=course,
-                    see_percentage=0.0,
-                    cie_ut_avg=0.0,
-                    see_atn=1,
-                    cie_atn=1
-                )
-                db.session.add(new_direct)
-            db.session.commit()
-            direct_data = DirectAttainment.query.all()
-
-        response = {
-            'perc1': sum(d.see_percentage for d in direct_data) / len(direct_data),
-            'perc2': sum(d.cie_ut_avg for d in direct_data) / len(direct_data)
-        }
-        return jsonify(response)
+        assessments = DirectAssessment.query.all()
+        if not assessments:
+            return jsonify({
+                'total_ext_percentage': '0',
+                'total_int_percentage': '0'
+            }), 200
+        ext_sum = sum(a.total_ext for a in assessments)
+        int_sum = sum(a.total_int for a in assessments)
+        valid_students = len(assessments)
+        total_ext_percentage = (ext_sum / (80 * valid_students)) * 100
+        total_int_percentage = (int_sum / (20 * valid_students)) * 100
+        return jsonify({
+            'total_ext_percentage': f'{total_ext_percentage:.2f}',
+            'total_int_percentage': f'{total_int_percentage:.2f}'
+        }), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"message": f"Error fetching summary data: {str(e)}"}), 500
+    
+@app.route('/get_avg_ut_co', methods=['GET'])
+def get_avg_ut_co():
+    try:
+        records = AvgUnitCO.query.all()
+        if not records:
+            return jsonify({
+                'error': 'No CO data available',
+                'co1': {'perc': 0.0}, 'co2': {'perc': 0.0}, 'co3': {'perc': 0.0},
+                'co4': {'perc': 0.0}, 'co5': {'perc': 0.0}, 'co6': {'perc': 0.0}
+            }), 404
+        formatted_data = {record.co.lower(): {'perc': float(record.perc)} for record in records}
+        return jsonify(formatted_data), 200
+    except Exception as e:
+        return jsonify({"message": f"Error fetching CO data: {str(e)}"}), 500    
 
 @app.route('/get_indirect', methods=['GET'])
 def get_indirect():
     try:
-        indirect_data = IndirectAttainment.query.all()
-        if not indirect_data:
-            courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6']
-            for i, course in enumerate(courses, 1):
-                new_indirect = IndirectAttainment(
-                    course=course,
-                    ces_avg=0.0,
-                    ces_atn=1
-                )
-                db.session.add(new_indirect)
-            db.session.commit()
-            indirect_data = IndirectAttainment.query.all()
-
-        response = {
-            'wtAvgCO1': indirect_data[0].ces_avg,
-            'wtAvgCO2': indirect_data[1].ces_avg,
-            'wtAvgCO3': indirect_data[2].ces_avg,
-            'wtAvgCO4': indirect_data[3].ces_avg,
-            'wtAvgCO5': indirect_data[4].ces_avg,
-            'wtAvgCO6': indirect_data[5].ces_avg
-        }
-        return jsonify(response)
+        latest_analysis = CourseAnalysis.query.order_by(CourseAnalysis.analysis_date.desc()).first()
+        if not latest_analysis:
+            return jsonify({
+                'error': 'No analysis data available',
+                'wt_avg_co1': 0.0, 'wt_avg_co2': 0.0, 'wt_avg_co3': 0.0,
+                'wt_avg_co4': 0.0, 'wt_avg_co5': 0.0, 'wt_avg_co6': 0.0
+            }), 404
+        return jsonify({
+            'wt_avg_co1': float(latest_analysis.wt_avg_co1),
+            'wt_avg_co2': float(latest_analysis.wt_avg_co2),
+            'wt_avg_co3': float(latest_analysis.wt_avg_co3),
+            'wt_avg_co4': float(latest_analysis.wt_avg_co4),
+            'wt_avg_co5': float(latest_analysis.wt_avg_co5),
+            'wt_avg_co6': float(latest_analysis.wt_avg_co6)
+        }), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"message": f"Error fetching indirect data: {str(e)}"}), 500
 
 @app.route('/save_attainment', methods=['POST'])
 def save_attainment():
@@ -1825,6 +1767,8 @@ def get_final_attainment():
             if direct and indirect:
                 direct_component = 0.8 * direct.see_atn + 0.2 * direct.cie_atn
                 final_attainment = 0.9 * direct_component + 0.1 * indirect.ces_atn
+                # Cap final attainment at 2.20
+                final_attainment = min(final_attainment, 2.20)
                 attainments[course] = round(final_attainment, 2)
 
                 # Save or update final attainment in the database
@@ -1843,7 +1787,6 @@ def get_final_attainment():
         db.session.rollback()
         print(f"Error in get_final_attainment: {str(e)}")  # Debug
         return jsonify({"error": str(e)}), 500
-
 @app.route('/co_achievement', methods=['GET'])
 def co_achievement():
     try:

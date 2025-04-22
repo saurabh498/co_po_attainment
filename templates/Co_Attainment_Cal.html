@@ -149,11 +149,14 @@
                 </tr>
                 <tr>
                     <th class="highlight">></th>
-                    <th class="highlight">&lt;=</th>
+                    <th class="highlight">
+                        <=< /th>
                     <th class="highlight">></th>
-                    <th class="highlight">&lt;=</th>
+                    <th class="highlight">
+                        <=< /th>
                     <th class="highlight">></th>
-                    <th class="highlight">&lt;=</th>
+                    <th class="highlight">
+                        <=< /th>
                 </tr>
             </thead>
             <tbody>
@@ -199,32 +202,32 @@
             </tr>
             <tr>
                 <td>CSC305.1</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.2</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.3</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.4</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.5</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.6</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
         </table>
@@ -238,32 +241,32 @@
             </tr>
             <tr>
                 <td>CSC305.1</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.2</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.3</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.4</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.5</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.6</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
         </table>
@@ -277,32 +280,32 @@
             </tr>
             <tr>
                 <td>CSC305.1</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.2</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.3</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.4</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.5</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
             <tr>
                 <td>CSC305.6</td>
-                <td><input type="text" /></td>
+                <td><input type="text" readonly /></td>
                 <td><input type="text" readonly /></td>
             </tr>
         </table>
@@ -411,84 +414,120 @@
 
         async function fetchAndDisplayData() {
             try {
-                const [directResponse, indirectResponse] = await Promise.all([
-                    fetch('/get_summary'),
-                    fetch('/get_indirect')
+                const [summaryResponse, utAvgResponse, indirectResponse] = await Promise.all([
+                    fetch('http://127.0.0.1:5000/get_summary').then(res => {
+                        console.log('Summary Response Status:', res.status, res.statusText);
+                        return res.text().then(text => ({ res, text }));
+                    }),
+                    fetch('http://127.0.0.1:5000/get_avg_ut_co').then(res => {
+                        console.log('UT Avg Response Status:', res.status, res.statusText);
+                        return res.text().then(text => ({ res, text }));
+                    }),
+                    fetch('http://127.0.0.1:5000/get_indirect').then(res => {
+                        console.log('Indirect Response Status:', res.status, res.statusText);
+                        return res.text().then(text => ({ res, text }));
+                    })
                 ]);
-                const directData = await directResponse.json();
-                const indirectData = await indirectResponse.json();
 
-                if (directData.perc1 && directData.perc2 && indirectData.wtAvgCO1) {
-                    fetchAttainmentData(directData);
-                    fetchIndirectData(indirectData);
-                    displayInitialAttainment(directData, indirectData);
+                // Parse JSON manually and log raw text if parsing fails
+                let summaryData, utAvgData, indirectData;
+                try {
+                    summaryData = JSON.parse(summaryResponse.text);
+                } catch (e) {
+                    console.error('Summary Parse Error:', e, 'Raw Response:', summaryResponse.text);
+                    throw e;
+                }
+                try {
+                    utAvgData = JSON.parse(utAvgResponse.text);
+                } catch (e) {
+                    console.error('UT Avg Parse Error:', e, 'Raw Response:', utAvgResponse.text);
+                    throw e;
+                }
+                try {
+                    indirectData = JSON.parse(indirectResponse.text);
+                } catch (e) {
+                    console.error('Indirect Parse Error:', e, 'Raw Response:', indirectResponse.text);
+                    throw e;
+                }
+
+                if (summaryData.total_ext_percentage && utAvgData && indirectData.wt_avg_co1) {
+                    populateSEETable(summaryData);
+                    populateCIETable(utAvgData);
+                    populateCESTable(indirectData);
+                    updateFinalAttainmentTable(summaryData, utAvgData, indirectData);
                 } else {
-                    console.warn('Incomplete data received from backend');
+                    console.warn('Incomplete data received from backend:', {
+                        summary: summaryData,
+                        utAvg: utAvgData,
+                        indirect: indirectData
+                    });
+                    alert('Failed to load some data. Please ensure all assessments are completed.');
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
+                alert('Error loading data: ' + error.message);
             }
         }
 
-        async function fetchAttainmentData(data) {
-            if (data.perc1 && data.perc2 && !isNaN(data.perc1) && !isNaN(data.perc2)) {
-                const tables = document.querySelectorAll('table');
-                const seeTable = tables[1];
-                const cieTable = tables[2];
-                const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
-                courses.forEach((co, index) => {
-                    seeTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data.perc1;
-                    cieTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data.perc2;
-                    updateAttainment({ target: seeTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input') });
-                    updateAttainment({ target: cieTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input') });
-                });
-            }
+        function populateSEETable(data) {
+            const tables = document.querySelectorAll('table');
+            const seeTable = tables[1]; // SEE table
+            const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+            const seeValue = parseFloat(data.total_ext_percentage) || 0;
+
+            courses.forEach((co, index) => {
+                const input = seeTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input');
+                input.value = seeValue.toFixed(2);
+                updateAttainment({ target: input });
+            });
         }
 
-        async function fetchIndirectData(data) {
-            if (data.wtAvgCO1 && !isNaN(data.wtAvgCO1)) {
-                const tables = document.querySelectorAll('table');
-                const cesTable = tables[3];
-                const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
-                courses.forEach((co, index) => {
-                    cesTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input').value = data[`wtAvgCO${index + 1}`];
-                    updateAttainment({ target: cesTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input') });
-                });
-            }
+        function populateCIETable(data) {
+            const tables = document.querySelectorAll('table');
+            const cieTable = tables[2]; // CIE table
+            const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+
+            courses.forEach((co, index) => {
+                const coKey = `CO${index + 1}`.toLowerCase();
+                const utAvgValue = parseFloat(data[coKey]?.perc) || 0;
+                const input = cieTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input');
+                input.value = utAvgValue.toFixed(2);
+                updateAttainment({ target: input });
+            });
         }
 
-        function displayInitialAttainment(directData, indirectData) {
-            const totalExtPercentage = parseFloat(directData.perc1) || 0;
-            const totalIntPercentage = parseFloat(directData.perc2) || 0;
-            const wtAvgPercentages = {
-                co1: parseFloat(indirectData.wtAvgCO1) || 0,
-                co2: parseFloat(indirectData.wtAvgCO2) || 0,
-                co3: parseFloat(indirectData.wtAvgCO3) || 0,
-                co4: parseFloat(indirectData.wtAvgCO4) || 0,
-                co5: parseFloat(indirectData.wtAvgCO5) || 0,
-                co6: parseFloat(indirectData.wtAvgCO6) || 0
-            };
+        function populateCESTable(data) {
+            const tables = document.querySelectorAll('table');
+            const cesTable = tables[3]; // CES table
+            const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
 
-            const mappings = {
-                'CSC305.1': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co1 },
-                'CSC305.2': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co2 },
-                'CSC305.3': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co3 },
-                'CSC305.4': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co4 },
-                'CSC305.5': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co5 },
-                'CSC305.6': { totalExt: totalExtPercentage, totalInt: totalIntPercentage, wtAvg: wtAvgPercentages.co6 }
-            };
+            courses.forEach((co, index) => {
+                const cesValue = parseFloat(data[`wt_avg_co${index + 1}`]) || 0;
+                const input = cesTable.querySelectorAll('tr')[index + 1].cells[1].querySelector('input');
+                input.value = cesValue.toFixed(2);
+                updateAttainment({ target: input });
+            });
+        }
 
-            Object.keys(mappings).forEach(co => {
-                const totalExtAttn = getAttainmentLevel(mappings[co].totalExt, 'SEE');
-                const totalIntAttn = getAttainmentLevel(mappings[co].totalInt, 'CIE');
-                const wtAvgAttn = getAttainmentLevel(mappings[co].wtAvg, 'CES');
+        function updateFinalAttainmentTable(summaryData, utAvgData, indirectData) {
+            const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
 
-                document.getElementById(`totalExt${co}`).textContent = `${mappings[co].totalExt.toFixed(2)}% (${totalExtAttn})`;
-                document.getElementById(`totalExt${co}`).className = `attainment-${totalExtAttn}`;
-                document.getElementById(`totalInt${co}`).textContent = `${mappings[co].totalInt.toFixed(2)}% (${totalIntAttn})`;
-                document.getElementById(`totalInt${co}`).className = `attainment-${totalIntAttn}`;
-                document.getElementById(`wtAvg${co}`).textContent = `${mappings[co].wtAvg.toFixed(2)}% (${wtAvgAttn})`;
-                document.getElementById(`wtAvg${co}`).className = `attainment-${wtAvgAttn}`;
+            courses.forEach((co, index) => {
+                const seePercentage = parseFloat(summaryData.total_ext_percentage) || 0;
+                const coKey = `CO${index + 1}`.toLowerCase();
+                const ciePercentage = parseFloat(utAvgData[coKey]?.perc) || 0;
+                const cesPercentage = parseFloat(indirectData[`wt_avg_co${index + 1}`]) || 0;
+
+                const seeAttn = getAttainmentLevel(seePercentage, 'SEE');
+                const cieAttn = getAttainmentLevel(ciePercentage, 'CIE');
+                const cesAttn = getAttainmentLevel(cesPercentage, 'CES');
+
+                document.getElementById(`totalExt${co}`).textContent = `${seePercentage.toFixed(2)}% (${seeAttn})`;
+                document.getElementById(`totalExt${co}`).className = `attainment-${seeAttn}`;
+                document.getElementById(`totalInt${co}`).textContent = `${ciePercentage.toFixed(2)}% (${cieAttn})`;
+                document.getElementById(`totalInt${co}`).className = `attainment-${cieAttn}`;
+                document.getElementById(`wtAvg${co}`).textContent = `${cesPercentage.toFixed(2)}% (${cesAttn})`;
+                document.getElementById(`wtAvg${co}`).className = `attainment-${cesAttn}`;
             });
         }
 
@@ -510,9 +549,8 @@
                     cie_ut_avg: parseFloat(cieRow.cells[1].querySelector('input').value) || 0,
                     ces_avg: parseFloat(cesRow.cells[1].querySelector('input').value) || 0
                 };
-                console.log(`Saving ${co}:`, data);
 
-                return fetch('/save_attainment', {
+                return fetch('http://127.0.0.1:5000/save_attainment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -549,44 +587,43 @@
         }
 
         function calculateFinalAttainment() {
-            save().then(() => {
-                fetch('/get_final_attainment')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! Status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Full response from /get_final_attainment:', JSON.stringify(data));
-                        if (data.error) {
-                            alert('Error: ' + data.error);
-                            return;
-                        }
-                        const attainments = data.attainments || {};
-                        console.log('Attainments:', attainments);
-                        const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+    save().then(() => {
+        fetch('http://127.0.0.1:5000/get_final_attainment')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                const attainments = data.attainments || {};
+                const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
 
-                        courses.forEach(co => {
-                            const finalAttn = attainments[co] || 0;
-                            console.log(`${co} final attainment: ${finalAttn}`);
-                            const finalCell = document.getElementById(`final${co}`);
-                            finalCell.textContent = finalAttn.toFixed(2);
-                            finalCell.className = 'final-attainment';
-                            if (finalAttn >= 2.5) finalCell.classList.add('attainment-3');
-                            else if (finalAttn >= 1.5) finalCell.classList.add('attainment-2');
-                            else finalCell.classList.add('attainment-1');
-                        });
-                        alert("Final Attainment Calculated Successfully!");
-                    })
-                    .catch(error => {
-                        console.error('Error fetching final attainment:', error);
-                        alert('Failed to calculate final attainment: ' + error.message);
-                    });
-            }).catch(error => {
-                console.error('Save failed before calculating:', error);
+                courses.forEach(co => {
+                    let finalAttn = attainments[co] || 0;
+                    // Cap final attainment at 2.20
+                    finalAttn = Math.min(finalAttn, 2.20);
+                    const finalCell = document.getElementById(`final${co}`);
+                    finalCell.textContent = finalAttn.toFixed(2);
+                    finalCell.className = 'final-attainment';
+                    if (finalAttn >= 2.5) finalCell.classList.add('attainment-3');
+                    else if (finalAttn >= 1.5) finalCell.classList.add('attainment-2');
+                    else finalCell.classList.add('attainment-1');
+                });
+                alert("Final Attainment Calculated Successfully!");
+            })
+            .catch(error => {
+                console.error('Error fetching final attainment:', error);
+                alert('Failed to calculate final attainment: ' + error.message);
             });
-        }
+    }).catch(error => {
+        console.error('Save failed before calculating:', error);
+    });
+}
 
         function resetTable() {
             const inputs = document.querySelectorAll('input[type="text"]');
