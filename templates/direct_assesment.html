@@ -210,7 +210,6 @@
             <button class="save-btn" onclick="saveData()">Save</button>
             <button class="view-btn" onclick="viewData()">View</button>
             <button class="next-btn" onclick="Indirect_assesment()">Next</button>
-
         </div>
 
         <div id="savedData">
@@ -294,14 +293,7 @@
                 const extTotal = parseInt(cols[2]) || 0;
                 const intTotal = parseInt(cols[3]) || 0;
                 const total = extTotal + intTotal;
-
-                let grade = "";
-                if (total >= 90) grade = "A+";
-                else if (total >= 80) grade = "A";
-                else if (total >= 70) grade = "B";
-                else if (total >= 60) grade = "C";
-                else if (total >= 50) grade = "D";
-                else grade = "F";
+                const grade = cols[4]; // Use the grade directly from the CSV
 
                 let row = document.createElement('tr');
                 row.innerHTML = `
@@ -336,12 +328,17 @@
             totalInput.value = total;
 
             let grade = "";
-            if (total >= 90) grade = "A+";
-            else if (total >= 80) grade = "A";
-            else if (total >= 70) grade = "B";
-            else if (total >= 60) grade = "C";
-            else if (total >= 50) grade = "D";
+            if (total >= 75) grade = "A";
+            else if (total >= 65) grade = "B";
+            else if (total >= 45) grade = "C";
+            else if (total >= 35) grade = "D";
             else grade = "F";
+
+            // Apply leniency rule: If total is 40 or above, ensure at least a "C"
+            if (total >= 40 && grade === "F") {
+                grade = "C";
+            }
+
             gradeInput.value = grade;
         }
 
@@ -540,8 +537,8 @@
             const avgExt = Math.floor(extSum / validStudents);
             const avgInt = Math.floor(intSum / validStudents);
             const avgTotal = (grandSum / validStudents).toFixed(2);
-            const maxExtMarks = 80; // Maximum possible external marks
-            const maxIntMarks = 20; // Maximum possible internal marks
+            const maxExtMarks = 80;
+            const maxIntMarks = 20;
             const percExt = (Math.floor((extSum / (maxExtMarks * validStudents)) * 100)).toFixed(2);
             const percInt = (Math.floor((intSum / (maxIntMarks * validStudents)) * 100)).toFixed(2);
             const percTotal = (Math.floor((grandSum / (100 * validStudents)) * 100)).toFixed(2);
@@ -555,8 +552,8 @@
 
             const summaryData = {
                 average_marks: parseFloat(avgTotal),
-                max_ext_marks: avgExt,  // Using average as max for now; adjust if you mean maximum achieved
-                max_int_marks: avgInt,  // Using average as max for now; adjust if you mean maximum achieved
+                max_ext_marks: avgExt,
+                max_int_marks: avgInt,
                 overall_percentage: parseFloat(percTotal),
                 most_common_grade: mostCommonGrade
             };
@@ -582,7 +579,6 @@
                 });
         }
 
-        // Call saveSummary after saveData
         function saveData() {
             let rows = document.querySelectorAll("#marklist tr");
             let data = [];
@@ -634,7 +630,7 @@
                     if (result.message === "Data saved successfully") {
                         alert("Student data saved successfully!");
                         updateSummaryFromTable();
-                        saveSummary();  // Trigger summary save after marks are saved
+                        saveSummary();
                     } else {
                         alert("Error saving data: " + result.message);
                     }
@@ -718,7 +714,6 @@
             row.querySelector(".student_name").value = `Student_${rollNo}`;
         }
 
-        // New function to expose data
         function getDirectAssessmentData() {
             const percExt = document.getElementById("perc1").value.replace('%', '') || '0';
             const percInt = document.getElementById("perc2").value.replace('%', '') || '0';
@@ -730,7 +725,6 @@
             };
         }
 
-        // Add event listener to serve data
         window.addEventListener('load', () => {
             if (window.location.pathname.includes('direct_assessment')) {
                 fetch('/get_direct_summary', {
@@ -744,13 +738,11 @@
             }
         });
 
-        // Add attainment level function
         function getAttainmentLevel(percentage) {
             if (percentage >= 75) return 3;
             else if (percentage >= 50) return 2;
             else return 1;
         }
-    
     </script>
 </body>
 

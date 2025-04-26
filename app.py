@@ -87,8 +87,6 @@ class Mapping(db.Model):
     
     user = db.relationship("User", backref="mappings")
     
-  
-   
 # Define Student Model
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -412,8 +410,6 @@ class FinalAttainment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     course = db.Column(db.String(20), nullable=False, unique=True)
     final_attainment = db.Column(db.Float, nullable=False)    
-
-
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -1787,6 +1783,7 @@ def get_final_attainment():
         db.session.rollback()
         print(f"Error in get_final_attainment: {str(e)}")  # Debug
         return jsonify({"error": str(e)}), 500
+    
 @app.route('/co_achievement', methods=['GET'])
 def co_achievement():
     try:
@@ -1800,6 +1797,109 @@ def Po_Attainment_Cal():
         return render_template('Po_Attainment_Cal.html')
     except Exception as e:
         return jsonify({"error": str(e)}), 500    
+    
+@app.route('/load-datapo', methods=['GET'])
+def load_datapo():
+    try:
+        # Define COs and POs/PSOs
+        cos = ['CO1', 'CO2', 'CO3', 'CO4', 'CO5', 'CO6']
+        pos = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2']
+        
+        # Initialize table data
+        table_data = []
+        
+        # Step 1: Populate CO rows (CO1 to CO6)
+        for co in cos:
+            row = [co]  # First column is CO code
+            final_attainment = FinalAttainment.query.filter_by(course=co).first()
+            attainment_value = final_attainment.final_attainment if final_attainment else 0
+            
+            for po in pos:
+                mapping = Mapping.query.filter_by(co_code=co, po_code=po).first()
+                if mapping and mapping.mapping_value > 0:
+                    # If mapping exists, use final attainment value
+                    row.append(str(round(attainment_value, 1)))
+                else:
+                    row.append('NA')
+            table_data.append(row)
+        
+        # Step 2: Compute Avg Attainment
+        avg_attainment = ['Avg Attainment']
+        for po in pos:
+            # Get all mappings for this PO where mapping_value > 0
+            mappings = Mapping.query.filter_by(po_code=po).join(FinalAttainment, Mapping.co_code == FinalAttainment.course).filter(Mapping.mapping_value > 0).all()
+            if mappings:
+                total_attainment = sum(FinalAttainment.query.filter_by(course=m.co_code).first().final_attainment for m in mappings)
+                avg = total_attainment / len(mappings) if mappings else 0
+                avg_attainment.append(str(round(avg, 1)) if avg > 0 else '')
+            else:
+                avg_attainment.append('')
+        table_data.append(avg_attainment)
+        
+        # Step 3: Mapping Strength
+        mapping_strength = ['Mapping Strength']
+        for po in pos:
+            mappings = Mapping.query.filter_by(po_code=po).all()
+            if mappings:
+                avg_mapping = sum(m.mapping_value for m in mappings) / len(mappings)
+                mapping_strength.append(str(round(avg_mapping, 1)) if avg_mapping > 0 else '')
+            else:
+                mapping_strength.append('')
+        table_data.append(mapping_strength)
+        
+        # Step 4: PO Attainment (assuming weighted by mapping_value)
+        po_attainment = ['PO Attainment']
+        for po in pos:
+            mappings = Mapping.query.filter_by(po_code=po).join(FinalAttainment, Mapping.co_code == FinalAttainment.course).filter(Mapping.mapping_value > 0).all()
+            if mappings:
+                weighted_sum = sum(FinalAttainment.query.filter_by(course=m.co_code).first().final_attainment * m.mapping_value for m in mappings)
+                total_mapping = sum(m.mapping_value for m in mappings)
+                attainment = weighted_sum / total_mapping if total_mapping > 0 else 0
+                po_attainment.append(str(round(attainment, 1)) if attainment > 0 else '')
+            else:
+                po_attainment.append('')
+        table_data.append(po_attainment)
+        
+        return jsonify(table_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500    
+    
+@app.route('/save', methods=['POST'])
+def save_datapo():
+    try:
+        data = request.json['tableData']
+        # Update FinalAttainment and Mapping tables
+        for row in data[:6]:  # CO1 to CO6
+            co = row[0]
+            final_attainment = FinalAttainment.query.filter_by(course=co).first()
+            if final_attainment:
+                # Update based on non-NA values (simplified)
+                non_na_values = [float(v) for v in row[1:] if v != 'NA' and v != '']
+                final_attainment.final_attainment = sum(non_na_values) / len(non_na_values) if non_na_values else final_attainment.final_attainment
+            else:
+                # Create new entry (adjust as needed)
+                final_attainment = FinalAttainment(course=co, final_attainment=0)
+                db.session.add(final_attainment)
+        
+        # Update Mapping table (example, adjust based on your logic)
+        for row in data[:6]:
+            co = row[0]
+            for i, po in enumerate(['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2']):
+                value = row[i + 1]
+                if value != 'NA' and value != '':
+                    mapping = Mapping.query.filter_by(co_code=co, po_code=po).first()
+                    if mapping:
+                        mapping.avg_value = float(value)
+                    else:
+                        # Create new mapping (adjust subject_copo_id and user_id)
+                        mapping = Mapping(co_code=co, po_code=po, mapping_value=3.0, avg_value=float(value), subject_copo_id=1, user_id=1)
+                        db.session.add(mapping)
+        
+        db.session.commit()
+        return jsonify({'message': 'Data saved successfully!'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500    
 
 @app.route('/po_achievement', methods=['GET'])
 def po_achievement():
