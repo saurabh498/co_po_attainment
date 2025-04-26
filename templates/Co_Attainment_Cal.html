@@ -402,13 +402,15 @@
 
         function getAttainmentLevel(percentage, context) {
             if (context.includes('CES')) {
-                if (percentage >= 85) return 3;
-                if (percentage >= 80) return 2;
-                return 1;
-            } else {
-                if (percentage >= 75) return 3;
-                if (percentage >= 50) return 2;
-                return 1;
+                if (percentage >= 85 && percentage <= 100) return 3;  // Level 3: 85–100
+                if (percentage >= 80 && percentage < 85) return 2;    // Level 2: 80–<85
+                if (percentage >= 75 && percentage < 80) return 1;    // Level 1: 75–<80
+                return 0;  // Below 75: No attainment
+            } else { // SEE or CIE
+                if (percentage >= 75 && percentage <= 100) return 3;  // Level 3: 75–100
+                if (percentage >= 50 && percentage < 75) return 2;    // Level 2: 50–74
+                if (percentage >= 10 && percentage < 50) return 1;    // Level 1: 10–49
+                return 0;  // Below 10: No attainment
             }
         }
 
@@ -587,43 +589,43 @@
         }
 
         function calculateFinalAttainment() {
-    save().then(() => {
-        fetch('http://127.0.0.1:5000/get_final_attainment')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                    return;
-                }
-                const attainments = data.attainments || {};
-                const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
+            save().then(() => {
+                fetch('http://127.0.0.1:5000/get_final_attainment')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            alert('Error: ' + data.error);
+                            return;
+                        }
+                        const attainments = data.attainments || {};
+                        const courses = ['CSC305.1', 'CSC305.2', 'CSC305.3', 'CSC305.4', 'CSC305.5', 'CSC305.6'];
 
-                courses.forEach(co => {
-                    let finalAttn = attainments[co] || 0;
-                    // Cap final attainment at 2.20
-                    finalAttn = Math.min(finalAttn, 2.20);
-                    const finalCell = document.getElementById(`final${co}`);
-                    finalCell.textContent = finalAttn.toFixed(2);
-                    finalCell.className = 'final-attainment';
-                    if (finalAttn >= 2.5) finalCell.classList.add('attainment-3');
-                    else if (finalAttn >= 1.5) finalCell.classList.add('attainment-2');
-                    else finalCell.classList.add('attainment-1');
-                });
-                alert("Final Attainment Calculated Successfully!");
-            })
-            .catch(error => {
-                console.error('Error fetching final attainment:', error);
-                alert('Failed to calculate final attainment: ' + error.message);
+                        courses.forEach(co => {
+                            let finalAttn = attainments[co] || 0;
+                            // Cap final attainment at 2.20
+                            finalAttn = Math.min(finalAttn, 2.20);
+                            const finalCell = document.getElementById(`final${co}`);
+                            finalCell.textContent = finalAttn.toFixed(2);
+                            finalCell.className = 'final-attainment';
+                            if (finalAttn >= 2.5) finalCell.classList.add('attainment-3');
+                            else if (finalAttn >= 1.5) finalCell.classList.add('attainment-2');
+                            else finalCell.classList.add('attainment-1');
+                        });
+                        alert("Final Attainment Calculated Successfully!");
+                    })
+                    .catch(error => {
+                        console.error('Error fetching final attainment:', error);
+                        alert('Failed to calculate final attainment: ' + error.message);
+                    });
+            }).catch(error => {
+                console.error('Save failed before calculating:', error);
             });
-    }).catch(error => {
-        console.error('Save failed before calculating:', error);
-    });
-}
+        }
 
         function resetTable() {
             const inputs = document.querySelectorAll('input[type="text"]');
