@@ -411,6 +411,29 @@ class FinalAttainment(db.Model):
     course = db.Column(db.String(20), nullable=False, unique=True)
     final_attainment = db.Column(db.Float, nullable=False)    
 
+class COPOMapping(db.Model):
+    __tablename__ = 'co_po_mapping'
+    id = db.Column(db.Integer, primary_key=True)
+    subject_name = db.Column(db.String(100), nullable=False)
+    co_code = db.Column(db.String(20), nullable=False)
+    po_code = db.Column(db.String(20), nullable=False)
+    attainment_value = db.Column(db.Float, nullable=True)
+
+    def __repr__(self):
+        return f'<COPOMapping {self.co_code}-{self.po_code}: {self.attainment_value}>'
+
+class SubjectPOSummary(db.Model):
+    __tablename__ = 'subject_po_summary'
+    id = db.Column(db.Integer, primary_key=True)
+    subject_name = db.Column(db.String(100), nullable=False)
+    po_code = db.Column(db.String(20), nullable=False)
+    avg_attainment = db.Column(db.Float, nullable=True)
+    mapping_strength = db.Column(db.Float, nullable=True)
+    po_attainment = db.Column(db.Float, nullable=True)
+
+    def __repr__(self):
+        return f'<SubjectPOSummary {self.subject_name}-{self.po_code}: Avg Attainment: {self.avg_attainment}, Mapping Strength: {self.mapping_strength}, PO Attainment: {self.po_attainment}>'
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, user_id)  # ✅ FIXED
@@ -1797,109 +1820,144 @@ def Po_Attainment_Cal():
         return render_template('Po_Attainment_Cal.html')
     except Exception as e:
         return jsonify({"error": str(e)}), 500    
-    
-@app.route('/load-datapo', methods=['GET'])
-def load_datapo():
+     
+@app.route('/save_po_attainment', methods=['POST'])
+def save_po_attainment():
     try:
-        # Define COs and POs/PSOs
-        cos = ['CO1', 'CO2', 'CO3', 'CO4', 'CO5', 'CO6']
-        pos = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2']
-        
-        # Initialize table data
-        table_data = []
-        
-        # Step 1: Populate CO rows (CO1 to CO6)
-        for co in cos:
-            row = [co]  # First column is CO code
-            final_attainment = FinalAttainment.query.filter_by(course=co).first()
-            attainment_value = final_attainment.final_attainment if final_attainment else 0
-            
-            for po in pos:
-                mapping = Mapping.query.filter_by(co_code=co, po_code=po).first()
-                if mapping and mapping.mapping_value > 0:
-                    # If mapping exists, use final attainment value
-                    row.append(str(round(attainment_value, 1)))
-                else:
-                    row.append('NA')
-            table_data.append(row)
-        
-        # Step 2: Compute Avg Attainment
-        avg_attainment = ['Avg Attainment']
-        for po in pos:
-            # Get all mappings for this PO where mapping_value > 0
-            mappings = Mapping.query.filter_by(po_code=po).join(FinalAttainment, Mapping.co_code == FinalAttainment.course).filter(Mapping.mapping_value > 0).all()
-            if mappings:
-                total_attainment = sum(FinalAttainment.query.filter_by(course=m.co_code).first().final_attainment for m in mappings)
-                avg = total_attainment / len(mappings) if mappings else 0
-                avg_attainment.append(str(round(avg, 1)) if avg > 0 else '')
+        data = request.get_json()
+        if not data or 'tableData' not in data:
+            return jsonify({'message': 'No data provided', 'status': 'error'}), 400
+
+        table_data = data['tableData']
+        subject_name = data.get('subject_name', 'default_subject')
+
+        # Clear existing data for the subject to avoid duplicates
+        COPOMapping.query.filter_by(subject_name=subject_name).delete()
+        SubjectPOSummary.query.filter_by(subject_name=subject_name).delete()
+
+        # Save new data
+        for row in table_data:
+            label = row[0]  # First column is either CO code or summary label
+            po_columns = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2']
+
+            if label.startswith(('Avg Attainment', 'Mapping Strength', 'PO Attainment')):
+                # Handle summary data
+                for i, value in enumerate(row[1:], start=1):
+                    po_code = po_columns[i-1]
+                    attainment = float(value) if value != 'NA' else None
+                    summary_entry = SubjectPOSummary.query.filter_by(subject_name=subject_name, po_code=po_code).first()
+                    if not summary_entry:
+                        summary_entry = SubjectPOSummary(subject_name=subject_name, po_code=po_code)
+                        db.session.add(summary_entry)
+                    if label == 'Avg Attainment':
+                        summary_entry.avg_attainment = attainment
+                    elif label == 'Mapping Strength':
+                        summary_entry.mapping_strength = attainment
+                    elif label == 'PO Attainment':
+                        summary_entry.po_attainment = attainment
             else:
-                avg_attainment.append('')
-        table_data.append(avg_attainment)
-        
-        # Step 3: Mapping Strength
-        mapping_strength = ['Mapping Strength']
-        for po in pos:
-            mappings = Mapping.query.filter_by(po_code=po).all()
-            if mappings:
-                avg_mapping = sum(m.mapping_value for m in mappings) / len(mappings)
-                mapping_strength.append(str(round(avg_mapping, 1)) if avg_mapping > 0 else '')
-            else:
-                mapping_strength.append('')
-        table_data.append(mapping_strength)
-        
-        # Step 4: PO Attainment (assuming weighted by mapping_value)
-        po_attainment = ['PO Attainment']
-        for po in pos:
-            mappings = Mapping.query.filter_by(po_code=po).join(FinalAttainment, Mapping.co_code == FinalAttainment.course).filter(Mapping.mapping_value > 0).all()
-            if mappings:
-                weighted_sum = sum(FinalAttainment.query.filter_by(course=m.co_code).first().final_attainment * m.mapping_value for m in mappings)
-                total_mapping = sum(m.mapping_value for m in mappings)
-                attainment = weighted_sum / total_mapping if total_mapping > 0 else 0
-                po_attainment.append(str(round(attainment, 1)) if attainment > 0 else '')
-            else:
-                po_attainment.append('')
-        table_data.append(po_attainment)
-        
-        return jsonify(table_data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500    
-    
-@app.route('/save', methods=['POST'])
-def save_datapo():
-    try:
-        data = request.json['tableData']
-        # Update FinalAttainment and Mapping tables
-        for row in data[:6]:  # CO1 to CO6
-            co = row[0]
-            final_attainment = FinalAttainment.query.filter_by(course=co).first()
-            if final_attainment:
-                # Update based on non-NA values (simplified)
-                non_na_values = [float(v) for v in row[1:] if v != 'NA' and v != '']
-                final_attainment.final_attainment = sum(non_na_values) / len(non_na_values) if non_na_values else final_attainment.final_attainment
-            else:
-                # Create new entry (adjust as needed)
-                final_attainment = FinalAttainment(course=co, final_attainment=0)
-                db.session.add(final_attainment)
-        
-        # Update Mapping table (example, adjust based on your logic)
-        for row in data[:6]:
-            co = row[0]
-            for i, po in enumerate(['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2']):
-                value = row[i + 1]
-                if value != 'NA' and value != '':
-                    mapping = Mapping.query.filter_by(co_code=co, po_code=po).first()
-                    if mapping:
-                        mapping.avg_value = float(value)
-                    else:
-                        # Create new mapping (adjust subject_copo_id and user_id)
-                        mapping = Mapping(co_code=co, po_code=po, mapping_value=3.0, avg_value=float(value), subject_copo_id=1, user_id=1)
-                        db.session.add(mapping)
-        
+                # Handle CO data
+                co_code = label
+                for i, value in enumerate(row[1:], start=1):
+                    po_code = po_columns[i-1]
+                    attainment = float(value) if value != 'NA' else None
+                    mapping = COPOMapping(
+                        subject_name=subject_name,
+                        co_code=co_code,
+                        po_code=po_code,
+                        attainment_value=attainment
+                    )
+                    db.session.add(mapping)
+
         db.session.commit()
-        return jsonify({'message': 'Data saved successfully!'})
+        return jsonify({'message': 'Data saved successfully!', 'status': 'success'})
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500    
+        return jsonify({'message': f'Error saving data: {str(e)}', 'status': 'error'}), 500
+
+@app.route('/load_po_attainment', methods=['GET'])
+def load_po_attainment():
+    try:
+        subject_name = request.args.get('subject')
+        if not subject_name:
+            return jsonify({'message': 'Subject name is required', 'status': 'error'}), 400
+
+        # Fetch CO data
+        co_mappings = COPOMapping.query.filter_by(subject_name=subject_name).all()
+        co_codes = sorted(set(m.co_code for m in co_mappings))
+        po_columns = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2']
+        table_data = []
+
+        for co_code in co_codes:
+            row = [co_code]
+            for po_code in po_columns:
+                value = next((m.attainment_value for m in co_mappings if m.co_code == co_code and m.po_code == po_code), 'NA')
+                row.append(value if value is not None else 'NA')
+            table_data.append(row)
+
+        # Fetch summary data
+        summary_entries = SubjectPOSummary.query.filter_by(subject_name=subject_name).all()
+        summary_data = {
+            'Avg Attainment': {entry.po_code: entry.avg_attainment for entry in summary_entries},
+            'Mapping Strength': {entry.po_code: entry.mapping_strength for entry in summary_entries},
+            'PO Attainment': {entry.po_code: entry.po_attainment for entry in summary_entries}
+        }
+
+        # Add summary rows to table_data
+        for label in ['Avg Attainment', 'Mapping Strength', 'PO Attainment']:
+            row = [label]
+            for po_code in po_columns:
+                value = summary_data[label].get(po_code)
+                row.append(value if value is not None else 'NA')
+            table_data.append(row)
+
+        return jsonify({'tableData': table_data, 'message': 'Data loaded successfully!', 'status': 'success'})
+
+    except Exception as e:
+        return jsonify({'message': f'Error loading data: {str(e)}', 'status': 'error'}), 500
+
+@app.route('/view_po_attainment', methods=['GET'])
+def view_po_attainment():
+    try:
+        subject_name = request.args.get('subject')
+        if not subject_name:
+            return jsonify({'message': 'Subject name is required', 'status': 'error'}), 400
+
+        # Fetch CO data
+        co_mappings = COPOMapping.query.filter_by(subject_name=subject_name).all()
+        co_codes = sorted(set(m.co_code for m in co_mappings))
+        po_columns = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2']
+        table_data = []
+
+        for co_code in co_codes:
+            row = [co_code]
+            for po_code in po_columns:
+                value = next((m.attainment_value for m in co_mappings if m.co_code == co_code and m.po_code == po_code), 'NA')
+                row.append(value if value is not None else 'NA')
+            table_data.append(row)
+
+        # Fetch summary data
+        summary_entries = SubjectPOSummary.query.filter_by(subject_name=subject_name).all()
+        summary_data = {
+            'Avg Attainment': {entry.po_code: entry.avg_attainment for entry in summary_entries},
+            'Mapping Strength': {entry.po_code: entry.mapping_strength for entry in summary_entries},
+            'PO Attainment': {entry.po_code: entry.po_attainment for entry in summary_entries}
+        }
+
+        # Add summary rows to table_data
+        for label in ['Avg Attainment', 'Mapping Strength', 'PO Attainment']:
+            row = [label]
+            for po_code in po_columns:
+                value = summary_data[label].get(po_code)
+                row.append(value if value is not None else 'NA')
+            table_data.append(row)
+
+        return jsonify({'tableData': table_data, 'message': 'Saved data loaded successfully!', 'status': 'success'})
+
+    except Exception as e:
+        return jsonify({'message': f'Error loading saved data: {str(e)}', 'status': 'error'}), 500
+    
 
 @app.route('/po_achievement', methods=['GET'])
 def po_achievement():
@@ -1907,6 +1965,24 @@ def po_achievement():
         return render_template('po_achievement.html')
     except Exception as e:
         return jsonify({"error": str(e)}), 500    
+    
+@app.route('/get_po_attainment', methods=['GET'])
+def get_po_attainment():
+    print("Received request for /get_po_attainment with subject:", request.args.get('subject'))  # Add this line
+    try:
+        subject_name = request.args.get('subject')
+        if not subject_name:
+            return jsonify({'message': 'Subject name is required', 'status': 'error'}), 400
+
+        summary_entries = SubjectPOSummary.query.filter_by(subject_name=subject_name).all()
+        if not summary_entries:
+            return jsonify({'message': 'No PO attainment data found for this subject', 'status': 'error'}), 404
+
+        attainments = {entry.po_code: entry.po_attainment for entry in summary_entries if entry.po_attainment is not None}
+        return jsonify({'attainments': attainments, 'status': 'success'})
+    except Exception as e:
+        print("Error:", str(e))  # Add this line
+        return jsonify({'message': f'Error fetching PO attainment data: {str(e)}', 'status': 'error'}), 500    
     
 if __name__ == "__main__":
     app.run(debug=True)

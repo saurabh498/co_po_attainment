@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PO Attainment Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f9;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    input[type="number"] {
+      width: 80px;
+      text-align: center;
+      padding: 5px;
+      border: none;
+    }
+    canvas {
+      display: block;
+      margin: 40px auto;
+      max-width: 800px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .reset-btn {
+      background: #dc3545;
+      color: white;
+    }
+    .print-btn {
+      background: #28a745;
+      color: white;
+    }
+    button:hover {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <h2>PO Achievement/Gap Chart</h2>
+  <table id="attainment-table">
+    <thead>
+      <tr>
+        <th>Program Outcome</th>
+        <th>Attainment</th>
+        <th>Target</th>
+        <th>GAP</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>PO1</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO2</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO3</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO4</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO5</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO6</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO7</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO8</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO9</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO10</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO11</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PO12</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PSO1</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+      <tr><td>PSO2</td><td><input type="number" step="0.01" readonly></td><td>2.20</td><td>0.0</td></tr>
+    </tbody>
+  </table>
+
+  <canvas id="attainmentChart" width="800" height="400"></canvas>
+
+  <div class="buttons">
+    <button class="reset-btn" onclick="resetChartAndTable()">Reset</button>
+    
+  </div>
+
+  <script>
+    const ctx = document.getElementById('attainmentChart').getContext('2d');
+    const programOutcomes = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2'];
+    const targets = Array(programOutcomes.length).fill(2.20);
+
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: programOutcomes,
+        datasets: [
+          {
+            label: 'Attainment',
+            data: [],
+            backgroundColor: [],
+          },
+          {
+            label: 'Target',
+            data: targets,
+            backgroundColor: '#ff9933'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'PO Attainment vs Target'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 3.0,
+            title: {
+              display: true,
+              text: 'Attainment Level'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Program Outcomes'
+            }
+          }
+        }
+      }
+    });
+
+    async function fetchAndUpdateData() {
+      let subject = localStorage.getItem('currentSubject');
+      if (!subject) {
+        subject = prompt("Please enter the subject name:");
+        if (!subject) {
+          alert('No subject provided!');
+          return;
+        }
+        localStorage.setItem('currentSubject', subject);
+      }
+
+      try {
+        const response = await fetch(`/get_po_attainment?subject=${encodeURIComponent(subject)}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Fetched PO data:', data);
+
+        if (data && data.attainments) {
+          const tableRows = document.querySelectorAll("#attainment-table tbody tr");
+          const attData = [];
+          const colors = [];
+
+          tableRows.forEach((row, index) => {
+            const po = programOutcomes[index];
+            const attainment = parseFloat(data.attainments[po]) || 0;
+            const target = parseFloat(row.cells[2].textContent);
+            const gap = (target - attainment).toFixed(2);
+
+            const input = row.cells[1].querySelector('input');
+            input.value = attainment.toFixed(2);
+            row.cells[3].textContent = gap;
+
+            if (attainment >= 2.0) {
+              input.style.backgroundColor = "#d4edda";
+              colors.push("#28a745"); // Green
+            } else if (attainment >= 1.8) {
+              input.style.backgroundColor = "#fff3cd";
+              colors.push("#ffc107"); // Yellow
+            } else {
+              input.style.backgroundColor = "#f8d7da";
+              colors.push("#dc3545"); // Red
+            }
+
+            attData.push(attainment);
+          });
+
+          chart.data.datasets[0].data = attData;
+          chart.data.datasets[0].backgroundColor = colors;
+          chart.update();
+        } else {
+          console.warn('No PO attainment data received');
+          alert('No PO attainment data available for this subject. Please calculate PO attainment first.');
+        }
+      } catch (error) {
+        console.error('Error fetching PO attainment data:', error);
+        alert('Failed to fetch PO attainment data: ' + error.message);
+      }
+    }
+
+    function resetChartAndTable() {
+      const tableRows = document.querySelectorAll("#attainment-table tbody tr");
+      tableRows.forEach(row => {
+        const input = row.cells[1].querySelector('input');
+        input.value = '';
+        input.style.backgroundColor = '';
+        row.cells[3].textContent = '0.0';
+      });
+
+      chart.data.datasets[0].data = [];
+      chart.data.datasets[0].backgroundColor = [];
+      chart.update();
+      alert('Chart and table reset successfully!');
+    }
+
+    // Initialize with fetched data
+    document.addEventListener('DOMContentLoaded', fetchAndUpdateData);
+  </script>
+</body>
+</html>

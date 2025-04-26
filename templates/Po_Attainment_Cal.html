@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Program Outcome Attainment</title>
   <style>
     body {
@@ -12,7 +13,8 @@
       padding: 20px;
     }
 
-    h2 {
+    h2,
+    h3 {
       text-align: center;
       color: #333;
       margin-bottom: 30px;
@@ -20,9 +22,10 @@
 
     .table-container {
       overflow-x: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       border-radius: 8px;
       background: #fff;
+      margin-bottom: 20px;
     }
 
     table {
@@ -41,7 +44,8 @@
       z-index: 2;
     }
 
-    th, td {
+    th,
+    td {
       border: 1px solid #ddd;
       padding: 10px;
       text-align: center;
@@ -80,6 +84,15 @@
       background-color: #218838;
     }
 
+    #viewBtn {
+      background-color: #ffc107;
+      color: black;
+    }
+
+    #viewBtn:hover {
+      background-color: #e0a800;
+    }
+
     .next-btn {
       background-color: #007bff;
       color: white;
@@ -103,8 +116,8 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <h2>Program Outcome Attainment</h2>
 
   <div class="table-container">
@@ -112,77 +125,174 @@
       <thead>
         <tr>
           <th></th>
-          <th>PO1</th><th>PO2</th><th>PO3</th><th>PO4</th><th>PO5</th><th>PO6</th><th>PO7</th>
-          <th>PO8</th><th>PO9</th><th>PO10</th><th>PO11</th><th>PO12</th>
-          <th>PSO1</th><th>PSO2</th>
+          <th>PO1</th>
+          <th>PO2</th>
+          <th>PO3</th>
+          <th>PO4</th>
+          <th>PO5</th>
+          <th>PO6</th>
+          <th>PO7</th>
+          <th>PO8</th>
+          <th>PO9</th>
+          <th>PO10</th>
+          <th>PO11</th>
+          <th>PO12</th>
+          <th>PSO1</th>
+          <th>PSO2</th>
         </tr>
       </thead>
-      <tbody id="tableBody">
-        <!-- Table body will be populated dynamically -->
-      </tbody>
+      <tbody id="tableBody"></tbody>
+      <tfoot id="summaryBody"></tfoot>
+    </table>
+
+    <h3>Saved PO Attainment Data</h3>
+    <table id="savedPoTable">
+      <thead>
+        <tr>
+          <th></th>
+          <th>PO1</th>
+          <th>PO2</th>
+          <th>PO3</th>
+          <th>PO4</th>
+          <th>PO5</th>
+          <th>PO6</th>
+          <th>PO7</th>
+          <th>PO8</th>
+          <th>PO9</th>
+          <th>PO10</th>
+          <th>PO11</th>
+          <th>PO12</th>
+          <th>PSO1</th>
+          <th>PSO2</th>
+        </tr>
+      </thead>
+      <tbody id="savedTableBody"></tbody>
+      <tfoot id="savedSummaryBody"></tfoot>
     </table>
   </div>
 
   <div class="button-container">
     <button id="saveBtn">Save</button>
+    <button id="viewBtn">View</button>
     <button class="next-btn" onclick="po_achievement()">Next</button>
     <div id="message"></div>
   </div>
 
   <script>
+    let currentSubject = localStorage.getItem('currentSubject') || null;
+
     async function loadTableData() {
       const message = document.getElementById('message');
+
       try {
-        const response = await fetch('http://localhost:5000/load-data', {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!currentSubject) {
+          currentSubject = prompt("Please enter the subject name to load data:");
+          if (!currentSubject) {
+            message.style.color = 'red';
+            message.textContent = 'No subject name provided!';
+            return;
+          }
+          localStorage.setItem('currentSubject', currentSubject);
         }
 
-        const data = await response.json();
+        const attainmentResponse = await fetch('http://127.0.0.1:5000/get_final_attainment');
+        if (!attainmentResponse.ok) throw new Error(`HTTP error! Status: ${attainmentResponse.status}`);
+        const attainmentData = await attainmentResponse.json();
+        const finalAttainments = attainmentData.attainments || {};
 
-        if (!Array.isArray(data) || data.length === 0) {
-          throw new Error('Invalid data: Expected a non-empty array');
-        }
-
-        const expectedColumns = 15;
-        if (data.some(row => !Array.isArray(row) || row.length !== expectedColumns)) {
-          throw new Error(`Invalid data: Each row must have exactly ${expectedColumns} columns`);
-        }
+        const mappingResponse = await fetch(`/view_sub_co_po?subject=${encodeURIComponent(currentSubject)}`);
+        if (!mappingResponse.ok) throw new Error(`HTTP error! Status: ${mappingResponse.status}`);
+        const mappingData = await mappingResponse.json();
 
         const tbody = document.getElementById('tableBody');
+        const summaryTfoot = document.getElementById('summaryBody');
         tbody.innerHTML = '';
+        summaryTfoot.innerHTML = '';
 
-        data.forEach((row, index) => {
+        const coCodes = [...new Set(mappingData.map(entry => entry.co_code))].sort();
+        const poColumns = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2'];
+
+        // Add CO rows
+        coCodes.forEach(coCode => {
           const tr = document.createElement('tr');
-          row.forEach((cell, cellIndex) => {
-            if (index >= data.length - 3 && cellIndex > 5 && cellIndex <= 11) {
-              return;
-            }
+          const tdCourse = document.createElement('td');
+          tdCourse.textContent = coCode;
+          tr.appendChild(tdCourse);
 
+          poColumns.forEach(poCode => {
+            const mappingEntry = mappingData.find(entry => entry.co_code === coCode && entry.po_code === poCode);
+            let mappingValue = mappingEntry ? parseFloat(mappingEntry.mapping_value) || 0 : 0;
+            let finalValue = mappingValue > 0 ? (finalAttainments[coCode] || 0) : 0;
             const td = document.createElement('td');
-            td.textContent = cell == null || cell === '' ? 'NA' : cell;
-
-            if (cellIndex !== 0) {
-              td.setAttribute('contenteditable', 'true');
-            }
-
-            if (index >= data.length - 3 && cellIndex === 0) {
-              td.style.fontWeight = 'bold';
-            }
-
-            if (index >= data.length - 3 && cellIndex === 5) {
-              td.setAttribute('colspan', '7');
-              td.textContent = '';
-            }
-
+            td.textContent = finalValue === 0 ? 'NA' : finalValue.toFixed(2);
+            td.setAttribute('contenteditable', 'true');
             tr.appendChild(td);
           });
+
           tbody.appendChild(tr);
         });
+
+        // Calculate summary rows
+        const calculateSummary = () => {
+          const summary = {
+            'Avg Attainment': {},
+            'Mapping Strength': {},
+            'PO Attainment': {}
+          };
+
+          poColumns.forEach(poCode => {
+            summary['Avg Attainment'][poCode] = 0;
+            summary['Mapping Strength'][poCode] = 0;
+            summary['PO Attainment'][poCode] = 0;
+          });
+
+          let coCount = 0;
+
+          coCodes.forEach(coCode => {
+            coCount++;
+            poColumns.forEach(poCode => {
+              const mappingEntry = mappingData.find(entry => entry.co_code === coCode && entry.po_code === poCode);
+              let mappingValue = mappingEntry ? parseFloat(mappingEntry.mapping_value) || 0 : 0;
+              let finalValue = mappingValue > 0 ? (finalAttainments[coCode] || 0) : 0;
+
+              if (finalValue > 0) {
+                summary['Avg Attainment'][poCode] += finalValue;
+              }
+              summary['Mapping Strength'][poCode] += mappingValue;
+              summary['PO Attainment'][poCode] = finalValue > 0 ? finalValue : (summary['PO Attainment'][poCode] || 0);
+            });
+          });
+
+          poColumns.forEach(poCode => {
+            summary['Avg Attainment'][poCode] = coCount > 0 ? (summary['Avg Attainment'][poCode] / coCount).toFixed(2) : 'NA';
+            summary['Mapping Strength'][poCode] = summary['Mapping Strength'][poCode] > 0 ? Math.min(3, summary['Mapping Strength'][poCode]).toFixed(1) : 'NA';
+            summary['PO Attainment'][poCode] = summary['PO Attainment'][poCode] > 0 ? summary['PO Attainment'][poCode].toFixed(2) : 'NA';
+          });
+
+          return summary;
+        };
+
+        // Add summary rows to tfoot
+        const summaryData = calculateSummary();
+        const addSummaryRow = (label, values) => {
+          const tr = document.createElement('tr');
+          const tdLabel = document.createElement('td');
+          tdLabel.textContent = label;
+          tr.appendChild(tdLabel);
+
+          poColumns.forEach(poCode => {
+            const td = document.createElement('td');
+            td.textContent = values[poCode];
+            td.setAttribute('contenteditable', 'true');
+            tr.appendChild(td);
+          });
+
+          summaryTfoot.appendChild(tr);
+        };
+
+        addSummaryRow('Avg Attainment', summaryData['Avg Attainment']);
+        addSummaryRow('Mapping Strength', summaryData['Mapping Strength']);
+        addSummaryRow('PO Attainment', summaryData['PO Attainment']);
 
         message.style.color = 'green';
         message.textContent = 'Data loaded successfully!';
@@ -194,32 +304,95 @@
     }
 
     document.getElementById('saveBtn').addEventListener('click', async function () {
+      const message = document.getElementById('message');
+
+      if (!currentSubject) {
+        message.style.color = 'red';
+        message.textContent = 'No subject loaded! Please load data first.';
+        return;
+      }
+
       const table = document.getElementById('poTable');
-      const rows = table.querySelectorAll('tbody tr');
+      const rows = table.querySelectorAll('tbody tr, tfoot tr');
       const tableData = [];
 
       rows.forEach(row => {
-        const rowData = [];
-        row.querySelectorAll('td').forEach(cell => {
-          rowData.push(cell.innerText.trim());
+        const rowData = [row.cells[0].textContent];
+        row.querySelectorAll('td:nth-child(n+2)').forEach(cell => {
+          rowData.push(cell.textContent.trim() === 'NA' ? 0 : parseFloat(cell.textContent) || 0);
         });
         tableData.push(rowData);
       });
 
       try {
-        const res = await fetch('http://localhost:5000/save', {
+        const response = await fetch('http://127.0.0.1:5000/save_po_attainment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tableData })
+          body: JSON.stringify({ tableData, subject_name: currentSubject })
         });
-        const data = await res.json();
-        const message = document.getElementById('message');
-        message.style.color = 'green';
-        message.textContent = data.message || 'Data saved successfully!';
+        const data = await response.json();
+        message.style.color = data.status === 'success' ? 'green' : 'red';
+        message.textContent = data.message;
       } catch (err) {
-        const message = document.getElementById('message');
+        console.error('Error saving data:', err);
         message.style.color = 'red';
         message.textContent = 'Error saving data!';
+      }
+    });
+
+    document.getElementById('viewBtn').addEventListener('click', async function () {
+      const message = document.getElementById('message');
+
+      if (!currentSubject) {
+        message.style.color = 'red';
+        message.textContent = 'No subject loaded! Please load data first.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/view_po_attainment?subject=${encodeURIComponent(currentSubject)}`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+
+        if (data.status !== 'success') throw new Error(data.message);
+
+        const savedTbody = document.getElementById('savedTableBody');
+        const savedSummaryTfoot = document.getElementById('savedSummaryBody');
+        savedTbody.innerHTML = '';
+        savedSummaryTfoot.innerHTML = '';
+
+        const tableData = data.tableData || [];
+        const poColumns = ['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12', 'PSO1', 'PSO2'];
+
+        // Populate #savedPoTable with received data
+        tableData.forEach(row => {
+          const tr = document.createElement('tr');
+          const tdLabel = document.createElement('td');
+          tdLabel.textContent = row[0];
+          tr.appendChild(tdLabel);
+
+          poColumns.forEach((_, i) => {
+            const td = document.createElement('td');
+            const value = row[i + 1];
+            td.textContent = value === 'NA' ? 'NA' : parseFloat(value).toFixed(2);
+            td.setAttribute('contenteditable', 'false'); // Saved table is read-only
+            tr.appendChild(td);
+          });
+
+          // Determine whether to append to tbody or tfoot based on row label
+          if (row[0].startsWith(('Avg Attainment', 'Mapping Strength', 'PO Attainment'))) {
+            savedSummaryTfoot.appendChild(tr);
+          } else {
+            savedTbody.appendChild(tr);
+          }
+        });
+
+        message.style.color = 'green';
+        message.textContent = 'Saved data loaded into Saved PO Attainment table successfully!';
+      } catch (err) {
+        console.error('Error viewing data:', err);
+        message.style.color = 'red';
+        message.textContent = `Error loading saved data: ${err.message}`;
       }
     });
 
@@ -229,6 +402,5 @@
 
     window.onload = loadTableData;
   </script>
-
 </body>
 </html>
