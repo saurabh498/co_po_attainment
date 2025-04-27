@@ -197,9 +197,7 @@
                         <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                         <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                         <td><span class="total-marks">0</span></td>
-                        <td><button class="btn btn-danger btn-sm"
-                                onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button>
-                        </td>
+                        <td><button class="btn btn-danger btn-sm" onclick="deleteStudent(this)">Delete</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -427,7 +425,7 @@
                     ${row.slice(2, 8).map(val => `<td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" value="${val || 0}" /></td>`).join('')}
                     ${row.slice(8, 12).map(val => `<td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" value="${val || 0}" /></td>`).join('')}
                     <td><span class="total-marks">0</span></td>
-                    <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteStudent(this)">Delete</button></td>
                 `;
                 tbody.appendChild(newRow);
             });
@@ -602,7 +600,7 @@
                 <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                 <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                 <td><span class="total-marks">0</span></td>
-                <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteStudent(this)">Delete</button></td>
             `;
             tbody.appendChild(newRow);
             CalculateMarks(); // Recalculate immediately after adding a row
@@ -759,7 +757,7 @@
                             ${row.slice(2, 8).map(val => `<td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" value="${val || 0}" /></td>`).join('')}
                             ${row.slice(8, 12).map(val => `<td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" value="${val || 0}" /></td>`).join('')}
                             <td><span class="total-marks">0</span></td>
-                            <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteStudent(this)">Delete</button></td>
                         `;
                             tbody.appendChild(newRow);
                         });
@@ -826,6 +824,36 @@
 
         function students_analysis() {
             window.location.href = "/students_analysis";
+        }
+
+        function deleteStudent(button) {
+            const row = button.parentElement.parentElement;
+            const rollNo = row.querySelector('.roll').value;
+            
+            if (!rollNo) {
+                alert('Please enter a roll number before deleting');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete the record for Roll No ${rollNo}?`)) {
+                fetch(`/delete_unit1_student/${rollNo}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        row.remove();
+                        CalculateMarks();
+                        alert(data.message);
+                    } else {
+                        alert(data.error || 'Error deleting record');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting record');
+                });
+            }
         }
     </script>
 </body>

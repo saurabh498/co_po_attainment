@@ -84,7 +84,7 @@
     <div class="container mt-4">
         <h1 class="text-center">Unit Test 2</h1>
 
-        <!-- UT1 Table -->
+        <!-- UT2 Table -->
         <div class="table-responsive mt-3">
             <table id="student-marks">
                 <thead>
@@ -129,54 +129,54 @@
                         <td></td>
                         <td></td>
                         <td><select class="form-control co-input" data-qn="1a">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="1b">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="1c">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="1d">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="1e">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="1f">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="2a">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="2b">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="3a">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td><select class="form-control co-input" data-qn="3b">
-                                <option value="CO1">CO4</option>
-                                <option value="CO2">CO5</option>
-                                <option value="CO3">CO6</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                                <option value="CO6">CO6</option>
                             </select></td>
                         <td></td>
                         <td></td>
@@ -197,9 +197,7 @@
                         <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                         <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                         <td><span class="total-marks">0</span></td>
-                        <td><button class="btn btn-danger btn-sm"
-                                onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button>
-                        </td>
+                        <td><button class="btn btn-danger btn-sm delete-row">Delete</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -366,7 +364,6 @@
             </table>
         </div>
 
-
         <!-- Buttons and CGPA Display -->
         <div class="text-center mt-4">
             <button class="btn btn-warning" onclick="Saveunit2()">Save</button>
@@ -376,7 +373,7 @@
     </div>
 
     <script>
-        // CO Mapping (example based on CO inputs; adjust as needed)
+        // CO Mapping (based on CO inputs)
         const coMapping = {
             '1a': 'CO4', '1b': 'CO4', '1c': 'CO5', '1d': 'CO5', '1e': 'CO6', '1f': 'CO6',
             '2a': 'CO5', '2b': 'CO6', '3a': 'CO4', '3b': 'CO5'
@@ -427,7 +424,7 @@
                     ${row.slice(2, 8).map(val => `<td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" value="${val || 0}" /></td>`).join('')}
                     ${row.slice(8, 12).map(val => `<td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" value="${val || 0}" /></td>`).join('')}
                     <td><span class="total-marks">0</span></td>
-                    <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+                    <td><button class="btn btn-danger btn-sm delete-row">Delete</button></td>
                 `;
                 tbody.appendChild(newRow);
             });
@@ -554,7 +551,7 @@
                 if (co === 'CO4') {
                     coTotals[co].q1a = totals.q1a;
                     coTotals[co].q1b = totals.q1b;
-                    coTotals[co].avg = (totals.q1a + totals.q1b) / (count * 2) * 100; // Average of Q1a and Q1b
+                    coTotals[co].avg = (totals.q1a + totals.q1b) / (count * 2) * 100;
                 } else if (co === 'CO5') {
                     coTotals[co].q1c = totals.q1c;
                     coTotals[co].q1d = totals.q1d;
@@ -562,24 +559,24 @@
                     coTotals[co].q1f = totals.q1f;
                     coTotals[co].q2a = totals.q2a;
                     coTotals[co].q2b = totals.q2b;
-                    coTotals[co].avg = (totals.q1c + totals.q1d + totals.q1e + totals.q1f + totals.q2a + totals.q2b) / (count * 14) * 100; // Average of 6 questions (2+2+2+2+5+5)
+                    coTotals[co].avg = (totals.q1c + totals.q1d + totals.q1e + totals.q1f + totals.q2a + totals.q2b) / (count * 14) * 100;
                 } else if (co === 'CO6') {
                     coTotals[co].q3a = totals.q3a;
                     coTotals[co].q3b = totals.q3b;
-                    coTotals[co].avg = (totals.q3a + totals.q3b) / (count * 10) * 100; // Average of Q3a and Q3b (5+5)
+                    coTotals[co].avg = (totals.q3a + totals.q3b) / (count * 10) * 100;
                 }
 
                 // Update CO table display with summary averages
-                document.getElementById(`${co.toLowerCase()}-q1a`).textContent = (coTotals[co].q1a / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1b`).textContent = (coTotals[co].q1b / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1c`).textContent = (coTotals[co].q1c / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1d`).textContent = (coTotals[co].q1d / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1e`).textContent = (coTotals[co].q1e / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q1f`).textContent = (coTotals[co].q1f / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q2a`).textContent = (coTotals[co].q2a / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q2b`).textContent = (coTotals[co].q2b / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q3a`).textContent = (coTotals[co].q3a / count).toFixed(2);
-                document.getElementById(`${co.toLowerCase()}-q3b`).textContent = (coTotals[co].q3b / count).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1a`).textContent = (coTotals[co].q1a / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1b`).textContent = (coTotals[co].q1b / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1c`).textContent = (coTotals[co].q1c / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1d`).textContent = (coTotals[co].q1d / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1e`).textContent = (coTotals[co].q1e / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q1f`).textContent = (coTotals[co].q1f / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q2a`).textContent = (coTotals[co].q2a / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q2b`).textContent = (coTotals[co].q2b / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q3a`).textContent = (coTotals[co].q3a / count || 0).toFixed(2);
+                document.getElementById(`${co.toLowerCase()}-q3b`).textContent = (coTotals[co].q3b / count || 0).toFixed(2);
                 document.getElementById(`${co.toLowerCase()}-avg`).textContent = avg;
                 document.getElementById(`${co.toLowerCase()}-perc`).textContent = percAvg;
             });
@@ -602,10 +599,10 @@
                 <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                 <td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" /></td>
                 <td><span class="total-marks">0</span></td>
-                <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
+                <td><button class="btn btn-danger btn-sm delete-row">Delete</button></td>
             `;
             tbody.appendChild(newRow);
-            CalculateMarks(); // Recalculate immediately after adding a row
+            CalculateMarks();
         }
 
         function Saveunit2() {
@@ -618,8 +615,8 @@
                 const inputs = row.querySelectorAll("input");
                 let isValid = true;
                 inputs.forEach((input, index) => {
-                    let value = input.value || '0'; // Default to '0' for empty inputs
-                    if (index < 2 && !input.value) { // Check roll_no and name
+                    let value = input.value || '0';
+                    if (index < 2 && !input.value) {
                         isValid = false;
                         alert('Roll No and Name are required for all students.');
                         return;
@@ -629,7 +626,7 @@
                 if (isValid) {
                     data.push(rowData);
                 } else {
-                    return; // Stop saving if validation fails
+                    return;
                 }
             }
 
@@ -739,8 +736,6 @@
                 });
         }
 
-
-
         function loadunit2() {
             fetch('/load_unit2')
                 .then(res => res.json())
@@ -754,13 +749,13 @@
                         data.students.forEach(row => {
                             const newRow = document.createElement('tr');
                             newRow.innerHTML = `
-                            <td><input type="text" class="form-control roll" value="${row[0] || ''}" /></td>
-                            <td><input type="text" class="form-control name" value="${row[1] || ''}" /></td>
-                            ${row.slice(2, 8).map(val => `<td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" value="${val || 0}" /></td>`).join('')}
-                            ${row.slice(8, 12).map(val => `<td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" value="${val || 0}" /></td>`).join('')}
-                            <td><span class="total-marks">0</span></td>
-                            <td><button class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); CalculateMarks();">Delete</button></td>
-                        `;
+                                <td><input type="text" class="form-control roll" value="${row[0] || ''}" /></td>
+                                <td><input type="text" class="form-control name" value="${row[1] || ''}" /></td>
+                                ${row.slice(2, 8).map(val => `<td><input type="number" class="form-control marks" data-marks="2" min="0" max="2" value="${val || 0}" /></td>`).join('')}
+                                ${row.slice(8, 12).map(val => `<td><input type="number" class="form-control marks" data-marks="5" min="0" max="5" value="${val || 0}" /></td>`).join('')}
+                                <td><span class="total-marks">0</span></td>
+                                <td><button class="btn btn-danger btn-sm delete-row">Delete</button></td>
+                            `;
                             tbody.appendChild(newRow);
                         });
 
@@ -805,7 +800,7 @@
                             document.getElementById(`${coId}-perc`).textContent = co.perc;
                         });
 
-                        CalculateMarks(); // Recalculate to ensure totals are correct
+                        CalculateMarks();
                         alert('Data loaded successfully!');
                     }
                 })
@@ -815,6 +810,11 @@
                 });
         }
 
+        function students_analysis2() {
+            window.location.href = "/students_analysis2";
+        }
+
+        // Update CO mapping on select change
         document.querySelectorAll('.co-input').forEach(select => {
             const qn = select.getAttribute('data-qn');
             coMapping[qn] = select.value;
@@ -824,9 +824,48 @@
             });
         });
 
-        function students_analysis2() {
-            window.location.href = "/students_analysis2";
-        }
+        // Delegated event listener for delete buttons
+        document.getElementById('student-marks').addEventListener('click', function (event) {
+            if (event.target.classList.contains('delete-row')) {
+                try {
+                    const row = event.target.closest('tr');
+                    if (row) {
+                        // Get the roll number before deleting
+                        const rollNo = row.querySelector('.roll').value;
+                        
+                        // Delete the row
+                        row.remove();
+                        
+                        // Recalculate marks
+                        CalculateMarks();
+                        
+                        // Send delete request to server
+                        fetch('/delete_unit2_student/' + rollNo, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Student deleted successfully:', data);
+                        })
+                        .catch(error => {
+                            console.error('Error deleting student:', error);
+                            alert('Error deleting student from server. Please try again.');
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error deleting row:', error);
+                    alert('Error deleting row. Please try again.');
+                }
+            }
+        });
     </script>
 </body>
 
