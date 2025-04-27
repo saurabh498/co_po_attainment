@@ -107,6 +107,7 @@
 
   <div class="buttons">
     <button class="reset-btn" onclick="resetChartAndTable()">Reset</button>
+    <button class="reset-btn" onclick="downloadFile()">Next</button>
     
   </div>
 
@@ -237,6 +238,11 @@
 
     // Initialize with fetched data
     document.addEventListener('DOMContentLoaded', fetchAndUpdateData);
+
+    function downloadFile() {
+      window.location.href = '/downloadFile';
+    }
+
   </script>
 </body>
 </html>

@@ -1,26 +1,22 @@
 import csv
-import io
-import json
 import datetime
-from io import StringIO
-import os
-from sqlite3 import Cursor
 import traceback
 import uuid
-from venv import logger
-from flask import Flask, Response, make_response, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, make_response, render_template, request, redirect, send_from_directory, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import CursorResult
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
 import pymysql
 from datetime import datetime
 from flask_sqlalchemy import session
 from flask import session, redirect, url_for
 from sqlalchemy.sql import func
-import pandas as pd  # Yeh line zaroori hai
 from flask import request
+import os
+import zipfile
+from io import BytesIO
 import pdfkit
+from flask import send_file
 
 pymysql.install_as_MySQLdb()
 
@@ -33,6 +29,36 @@ app.config['SECRET_KEY'] = 'your_secret_key'
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Configure pdfkit
+config = pdfkit.configuration(wkhtmltopdf='C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
+
+def generate_sample_pdf(filename, content):
+    """Generate a sample PDF file with given content"""
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; padding: 20px; }}
+            h1 {{ color: #333; }}
+            .content {{ margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <h1>{filename.replace('.pdf', '')}</h1>
+        <div class="content">
+            {content}
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Create the directory if it doesn't exist
+    os.makedirs('templates/files', exist_ok=True)
+    
+    # Generate PDF
+    pdfkit.from_string(html, f'templates/files/{filename}', configuration=config)
 
 # ------------------ DATABASE MODELS ------------------ #
 
@@ -1981,8 +2007,386 @@ def get_po_attainment():
         attainments = {entry.po_code: entry.po_attainment for entry in summary_entries if entry.po_attainment is not None}
         return jsonify({'attainments': attainments, 'status': 'success'})
     except Exception as e:
-        print("Error:", str(e))  # Add this line
+        print("Error:", str(e))  
         return jsonify({'message': f'Error fetching PO attainment data: {str(e)}', 'status': 'error'}), 500    
     
+@app.route('/downloadFile')
+def downloadFile():
+    return render_template('downloadFile.html')  
+
+@app.route('/files')
+def list_files():
+    try:
+        files = os.listdir('templates/files')
+        pdf_files = [f for f in files if f.endswith('.pdf')]
+        return jsonify(pdf_files)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    try:
+        return send_from_directory('templates/files', filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download_all')
+def download_all():
+    try:
+        # Create a ZIP file containing all PDFs
+        memory_file = BytesIO()
+        with zipfile.ZipFile(memory_file, 'w') as zf:
+            for filename in os.listdir('templates/files'):
+                if filename.endswith('.pdf'):
+                    file_path = os.path.join('templates/files', filename)
+                    zf.write(file_path, filename)
+        
+        memory_file.seek(0)
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='templates_pdfs.zip'
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/generate_templates')
+def generate_templates():
+    try:
+        # Create the directory if it doesn't exist
+        os.makedirs('templates/files', exist_ok=True)
+        
+        # Start building the comprehensive HTML
+        html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                h1 { color: #333; margin-top: 30px; }
+                h2 { color: #444; margin-top: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                .page-break { page-break-after: always; }
+            </style>
+        </head>
+        <body>
+        """
+
+        # 1. Dashboard Data
+        html += """
+            <h1>Dashboard Overview</h1>
+            <table>
+                <tr>
+                    <th>Department</th>
+                    <th>Academic Year</th>
+                    <th>Semester</th>
+                </tr>
+        """
+        academic_info = AcademicInfo.query.all()
+        for info in academic_info:
+            html += f"""
+                <tr>
+                    <td>{info.department}</td>
+                    <td>{info.academic_year}</td>
+                    <td>{info.semester}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 2. Subject CO-PO Mapping Data
+        html += """
+            <div class="page-break"></div>
+            <h1>Subject CO-PO Mapping</h1>
+            <h2>CO-PO Relationships</h2>
+            <table>
+                <tr>
+                    <th>Subject</th>
+                    <th>CO Code</th>
+                    <th>CO Text</th>
+                    <th>Cognition</th>
+                    <th>PO Code</th>
+                    <th>PO Text</th>
+                </tr>
+        """
+        subject_copos = SubjectCOPO.query.all()
+        for sc in subject_copos:
+            html += f"""
+                <tr>
+                    <td>{sc.subject_name}</td>
+                    <td>{sc.co_code}</td>
+                    <td>{sc.co_text}</td>
+                    <td>{sc.cognition}</td>
+                    <td>{sc.po_code}</td>
+                    <td>{sc.po_text}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # Add CO-PO Mapping Values
+        html += """
+            <h2>CO-PO Mapping Values</h2>
+            <table>
+                <tr>
+                    <th>Subject</th>
+                    <th>CO Code</th>
+                    <th>PO Code</th>
+                    <th>Mapping Value</th>
+                    <th>Total Hours</th>
+                    <th>Average Value</th>
+                </tr>
+        """
+        mappings = Mapping.query.all()
+        for mapping in mappings:
+            html += f"""
+                <tr>
+                    <td>{mapping.subject_copo.subject_name}</td>
+                    <td>{mapping.co_code}</td>
+                    <td>{mapping.po_code}</td>
+                    <td>{mapping.mapping_value}</td>
+                    <td>{mapping.total_hours}</td>
+                    <td>{mapping.avg_value}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 3. Next Page Data (Unit Test One)
+        html += """
+            <div class="page-break"></div>
+            <h1>Unit Test One Analysis</h1>
+            <h2>Student Performance</h2>
+            <table>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Name</th>
+                    <th>Test Marks</th>
+                    <th>Test Percentage</th>
+                    <th>Category</th>
+                    <th>Observation</th>
+                </tr>
+        """
+        student_performance = StudentPerformance.query.all()
+        for sp in student_performance:
+            html += f"""
+                <tr>
+                    <td>{sp.roll_no}</td>
+                    <td>{sp.name}</td>
+                    <td>{sp.test_marks}</td>
+                    <td>{sp.test_percentage}%</td>
+                    <td>{sp.category}</td>
+                    <td>{sp.observation}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 4. Students Analysis
+        html += """
+            <div class="page-break"></div>
+            <h1>Students Analysis</h1>
+            <h2>Student Performance Analysis</h2>
+            <table>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Name</th>
+                    <th>Marks</th>
+                    <th>Percentage</th>
+                    <th>Category</th>
+                    <th>Observation</th>
+                </tr>
+        """
+        student_analysis = StudentAnalysis.query.all()
+        for sa in student_analysis:
+            html += f"""
+                <tr>
+                    <td>{sa.roll_no}</td>
+                    <td>{sa.name}</td>
+                    <td>{sa.marks}</td>
+                    <td>{sa.percentage}%</td>
+                    <td>{sa.category}</td>
+                    <td>{sa.observation}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 5. Unit Test Two
+        html += """
+            <div class="page-break"></div>
+            <h1>Unit Test Two Analysis</h1>
+            <h2>Student Performance</h2>
+            <table>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Name</th>
+                    <th>Test Marks</th>
+                    <th>Test Percentage</th>
+                    <th>Category</th>
+                    <th>Observation</th>
+                </tr>
+        """
+        student_performance2 = StudentPerformance.query.all()
+        for sp in student_performance2:
+            html += f"""
+                <tr>
+                    <td>{sp.roll_no}</td>
+                    <td>{sp.name}</td>
+                    <td>{sp.test_marks}</td>
+                    <td>{sp.test_percentage}%</td>
+                    <td>{sp.category}</td>
+                    <td>{sp.observation}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 6. Average Unit CO
+        html += """
+            <div class="page-break"></div>
+            <h1>Average Unit CO Analysis</h1>
+            <table>
+                <tr>
+                    <th>CO</th>
+                    <th>Q1A</th>
+                    <th>Q1B</th>
+                    <th>Q1C</th>
+                    <th>Q1D</th>
+                    <th>Q1E</th>
+                    <th>Q1F</th>
+                    <th>Q2A</th>
+                    <th>Q2B</th>
+                    <th>Q3A</th>
+                    <th>Q3B</th>
+                    <th>Percentage</th>
+                </tr>
+        """
+        avg_unit_co = AvgUnitCO.query.all()
+        for co in avg_unit_co:
+            html += f"""
+                <tr>
+                    <td>{co.co}</td>
+                    <td>{co.q1a:.2f}</td>
+                    <td>{co.q1b:.2f}</td>
+                    <td>{co.q1c:.2f}</td>
+                    <td>{co.q1d:.2f}</td>
+                    <td>{co.q1e:.2f}</td>
+                    <td>{co.q1f:.2f}</td>
+                    <td>{co.q2a:.2f}</td>
+                    <td>{co.q2b:.2f}</td>
+                    <td>{co.q3a:.2f}</td>
+                    <td>{co.q3b:.2f}</td>
+                    <td>{co.perc:.2f}%</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 7. Direct Assessment
+        html += """
+            <div class="page-break"></div>
+            <h1>Direct Assessment</h1>
+            <table>
+                <tr>
+                    <th>Course</th>
+                    <th>SEE Percentage</th>
+                    <th>CIE UT Average</th>
+                    <th>SEE Attainment</th>
+                    <th>CIE Attainment</th>
+                </tr>
+        """
+        direct_attainments = DirectAttainment.query.all()
+        for da in direct_attainments:
+            html += f"""
+                <tr>
+                    <td>{da.course}</td>
+                    <td>{da.see_percentage:.2f}%</td>
+                    <td>{da.cie_ut_avg:.2f}</td>
+                    <td>{da.see_atn}</td>
+                    <td>{da.cie_atn}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 8. Indirect Assessment
+        html += """
+            <div class="page-break"></div>
+            <h1>Indirect Assessment</h1>
+            <table>
+                <tr>
+                    <th>Course</th>
+                    <th>CES Average</th>
+                    <th>CES Attainment</th>
+                </tr>
+        """
+        indirect_attainments = IndirectAttainment.query.all()
+        for ia in indirect_attainments:
+            html += f"""
+                <tr>
+                    <td>{ia.course}</td>
+                    <td>{ia.ces_avg:.2f}</td>
+                    <td>{ia.ces_atn}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 9. CO Attainment Calculation
+        html += """
+            <div class="page-break"></div>
+            <h1>CO Attainment Calculation</h1>
+            <table>
+                <tr>
+                    <th>Course</th>
+                    <th>Final Attainment</th>
+                </tr>
+        """
+        final_attainments = FinalAttainment.query.all()
+        for fa in final_attainments:
+            html += f"""
+                <tr>
+                    <td>{fa.course}</td>
+                    <td>{fa.final_attainment:.2f}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # 10. PO Attainment
+        html += """
+            <div class="page-break"></div>
+            <h1>PO Attainment</h1>
+            <table>
+                <tr>
+                    <th>Subject</th>
+                    <th>PO Code</th>
+                    <th>Average Attainment</th>
+                    <th>Mapping Strength</th>
+                    <th>PO Attainment</th>
+                </tr>
+        """
+        subject_pos = SubjectPOSummary.query.all()
+        for sp in subject_pos:
+            html += f"""
+                <tr>
+                    <td>{sp.subject_name}</td>
+                    <td>{sp.po_code}</td>
+                    <td>{sp.avg_attainment if sp.avg_attainment is not None else 'NA'}</td>
+                    <td>{sp.mapping_strength if sp.mapping_strength is not None else 'NA'}</td>
+                    <td>{sp.po_attainment if sp.po_attainment is not None else 'NA'}</td>
+                </tr>
+            """
+        html += "</table>"
+
+        # Close the HTML
+        html += """
+        </body>
+        </html>
+        """
+
+        # Generate the single comprehensive PDF
+        pdfkit.from_string(html, 'templates/files/Comprehensive_Report.pdf', configuration=config)
+
+        return jsonify({'message': 'Comprehensive report generated successfully with all data!'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)
